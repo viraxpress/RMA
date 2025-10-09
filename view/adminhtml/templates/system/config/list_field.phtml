@@ -1,0 +1,50 @@
+<?php
+// @phpcs:disable Generic.Files.LineLength
+/** @var $block \Magento\Config\Block\System\Config\Form\Field */
+$element = $block->getElement();
+$elementId = $element->getHtmlId();
+$elementName = $element->getName();
+$cssClass = $block->getData('list_class') ?: 'generic-list';
+$values = $element->getValue() ? explode(',', $element->getValue()) : [];
+?>
+<style>
+.remove-field,.add-field {
+    padding: 6px 10px;
+    cursor: pointer !important;
+    width: 50px;
+}
+.remove-field{
+    background-color:rgb(255, 10, 10) !important;
+    color:white;
+}
+.remove-field:hover{
+    color:white;
+}
+</style>
+<div id="<?= $escaper->escapeHtmlAttr($elementId) ?>_wrapper">
+    <ul class="<?= $escaper->escapeHtmlAttr($cssClass) ?> generic-list " id="<?= $escaper->escapeHtmlAttr($elementId) ?>_list">
+        <?php foreach ($values as $value): ?>
+            <?php $value = trim($value); if ($value !== ''): ?>
+                <li class="list-add-input">
+                    <input type="text" name="<?= $escaper->escapeHtmlAttr($elementName) ?>[]" value="<?= $escaper->escapeHtmlAttr($value) ?>" />
+                    <button type="button" class="remove-field">Remove</button>
+                </li>
+            <?php endif; ?>
+        <?php endforeach; ?>
+    </ul>
+    <div class="list-add-input">
+        <input type="text" id="<?= $escaper->escapeHtmlAttr($elementId) ?>_new_value" />
+        <button type="button" class="add-field">Add</button>
+    </div>
+</div>
+
+<script type="text/x-magento-init">
+{
+    "#<?= $escaper->escapeHtmlAttr($elementId) ?>_wrapper": {
+        "ViraXpress_Rma/js/list-field": {
+            "elementId": "<?= $escaper->escapeHtmlAttr($elementId) ?>",
+            "elementName": "<?= $escaper->escapeHtmlAttr($elementName) ?>"
+        }
+    }
+}
+</script>

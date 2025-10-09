@@ -1,0 +1,55 @@
+<?php
+/**
+ * Renderer for the “Items Ordered” grid — shows product name, options, and
+ * a “Replaced × N” badge when we swapped an item via RMA.
+ *
+ * Place in:  app/code/Vendor/Module/view/adminhtml/templates/items/renderer/replacement.phtml
+ */
+
+/** @var \Magento\Sales\Block\Adminhtml\Items\Column\DefaultColumn $block */
+$item         = $block->getItem();
+$qtyReplaced  = (float) $item->getQtyReturned();   // we moved the qty here in the controller
+$qtyRefunded  = (float) $item->getQtyRefunded();
+?>
+<?= $escaper->escapeHtml($item->getName()) ?>
+
+<?php /* ====== badge for replaced vs. refunded ================================= */ ?>
+<?php if ($qtyReplaced > 0 && $qtyRefunded == 0): ?>
+    <span class="grid-severity-minor"
+          style="margin-left:6px; padding:2px 4px; border-radius:3px;">
+        <?= $escaper->escapeHtml(__('Replaced × %1', $qtyReplaced)); ?>
+    </span>
+<?php elseif ($qtyRefunded > 0): ?>
+    <span class="grid-severity-major"
+          style="margin-left:6px; padding:2px 4px; border-radius:3px;">
+        <?= $escaper->escapeHtml(__('Refunded × %1', $qtyRefunded)); ?>
+    </span>
+<?php endif; ?>
+
+<div>
+    <strong><?= $escaper->escapeHtml(__('SKU')) ?>:</strong>
+    <?= /* @noEscape */ implode(
+        '<br />',
+        $block->helper(\Magento\Catalog\Helper\Data::class)
+            ->splitSku($escaper->escapeHtml($item->getSku()))
+    ) ?>
+</div>
+
+<?php if ($block->getOrderOptions()): ?>
+    <ul class="item-options">
+        <?php foreach ($block->getOrderOptions() as $option): ?>
+            <li>
+                <strong><?= $escaper->escapeHtml($option['label']) ?>:</strong><br />
+                <?php if (is_array($option['value'])): ?>
+                    <?php foreach ($option['value'] as $val): ?>
+                        <?= $block->getValueHtml($val) ?><br />
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <?= $escaper->escapeHtml($option['value']) ?>
+                <?php endif; ?>
+            </li>
+        <?php endforeach; ?>
+    </ul>
+<?php endif; ?>
+
+<?= $escaper->escapeHtml($item->getDescription()) ?>

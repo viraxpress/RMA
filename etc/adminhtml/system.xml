@@ -1,0 +1,252 @@
+<?xml version="1.0"?>
+<!-- /**
+ * ViraXpress - https://www.viraxpress.com
+ *
+ * LICENSE AGREEMENT
+ *
+ * This file is part of the ViraXpress package and is licensed under the ViraXpress license agreement.
+ * You can view the full license at:
+ * https://www.viraxpress.com/license
+ *
+ * By utilizing this file, you agree to comply with the terms outlined in the ViraXpress license.
+ *
+ * DISCLAIMER
+ *
+ * Modifications to this file are discouraged to ensure seamless upgrades and compatibility with future releases.
+ *
+ * @category    ViraXpress
+ * @package     ViraXpress_Rma
+ * @author      ViraXpress
+ * @copyright   © 2024 ViraXpress (https://www.viraxpress.com/)
+ * @license     https://www.viraxpress.com/license
+ */ -->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <tab id="rma" translate="label" sortOrder="100">
+            <label>RMA</label>
+        </tab>
+        <section id="rma" translate="label" sortOrder="600" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>RMA Configuration</label>
+            <tab>rma</tab>
+            <resource>ViraXpress_Rma::config_rma</resource>
+
+            <!-- General Settings -->
+            <group id="general" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Enable And Configure RMA Settings</label>
+                <field id="enable" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enable RMA Functionality</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="return_window" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Return Window (days after Order Shipped)</label>
+                    <validate>validate-number validate-zero-or-greater validate-digits validate-digits-range digits-range-1-100</validate>
+                    <frontend_class>required-entry</frontend_class>
+                </field>
+                <field id="status" translate="label" type="text" sortOrder="40"
+                    showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>RMA Status</label>
+                    <frontend_model>ViraXpress\Rma\Block\Adminhtml\System\Config\Form\Field\StatusList</frontend_model>
+                </field>
+                  <field id="item_status" translate="label" type="text" sortOrder="50"
+                    showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Item Status</label>
+                    <frontend_model>ViraXpress\Rma\Block\Adminhtml\System\Config\Form\Field\ItemStatusList</frontend_model>
+                </field>
+            </group>
+
+            <!-- Return Reasons, Conditions & Resolutions -->
+            <group id="reasons" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Return Reasons, Conditions And Resolutions</label>
+                <field id="return_reasons" translate="label" type="text" sortOrder="10"
+                    showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Return Reasons</label>
+                    <frontend_model>ViraXpress\Rma\Block\Adminhtml\System\Config\Form\Field\ReturnReasonsList</frontend_model>
+                </field>
+                 <field id="item_conditions" translate="label" type="text" sortOrder="10"
+                    showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Item Conditions</label>
+                    <frontend_model>ViraXpress\Rma\Block\Adminhtml\System\Config\Form\Field\ItemConditionList</frontend_model>
+                </field>
+                <field id="resolutions" translate="label" type="text" sortOrder="10"
+                    showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Resolutions</label>
+                    <frontend_model>ViraXpress\Rma\Block\Adminhtml\System\Config\Form\Field\ResolutionsList</frontend_model>
+                </field>
+            </group>
+            <group id="return_configuration" translate="label" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Return Image Configurations</label>
+                <field id="allow_file_upload" translate="label" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Allow File Upload</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+
+                <field id="allowed_file_types" translate="label" type="text" sortOrder="50"
+                    showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Allowed File Types</label>
+                    <comment>Enter comma-separated extensions. E.g., jpg,png,pdf</comment>
+                    <validate>required-entry validate-file-extensions</validate>
+                    <depends>
+                        <field id="allow_file_upload">1</field>
+                    </depends>
+                </field>
+                <field id="max_file_size" translate="label" type="text" sortOrder="60"
+                    showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Maximum File Size (MB)</label>
+                    <comment>Enter size limit for each file in megabytes (MB)</comment>
+                    <validate>required-entry validate-number validate-greater-than-zero</validate>
+                    <depends>
+                        <field id="allow_file_upload">1</field>
+                    </depends>
+                </field>
+                <field id="max_file_count" translate="label" type="text" sortOrder="60"
+                    showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Maximum Number of Files</label>
+                    <comment>Enter number of files to upload</comment>
+                    <validate>required-entry validate-number validate-greater-than-zero</validate>
+                    <depends>
+                        <field id="allow_file_upload">1</field>
+                    </depends>
+                </field>
+            </group>
+
+            <!-- Product & Order Eligibility -->
+            <group id="eligibility" translate="label" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Product And Order Eligibility</label>
+                <field id="allowed_categories" translate="label" type="multiselect" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Allowed Product Categories</label>
+                    <source_model>ViraXpress\Rma\Model\Config\Source\AllowedCategories</source_model>
+                </field>
+                <field id="allowed_statuses" translate="label" type="multiselect" sortOrder="20"
+                    showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Allowed Order Statuses </label>
+                    <source_model>ViraXpress\Rma\Model\Config\Source\CompleteStatuses</source_model>
+                    <validate>required-entry</validate>
+                    <frontend_class>required-entry</frontend_class>
+                </field>
+                <field id="allowed_product_types" translate="label" type="multiselect" sortOrder="20"
+                    showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Allowed Product Types</label>
+                    <source_model>Magento\Catalog\Model\Product\Type</source_model>
+                    <validate>required-entry</validate>
+                    <frontend_class>required-entry</frontend_class>
+                </field>
+            </group>
+
+            <group id="inspection" translate="label" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Item Inspection Configuration</label>
+                <field id="test_results" translate="label" type="text" sortOrder="10"
+                    showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Test Results</label>
+                    <frontend_model>ViraXpress\Rma\Block\Adminhtml\System\Config\Form\Field\TestResultsList</frontend_model>
+                </field>
+                 <field id="action_taken" translate="label" type="text" sortOrder="10"
+                    showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Action Taken</label>
+                    <frontend_model>ViraXpress\Rma\Block\Adminhtml\System\Config\Form\Field\ActionTakenList</frontend_model>
+                </field>
+                <field id="inspection_status" translate="label" type="text" sortOrder="10"
+                    showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Inspection Status</label>
+                    <frontend_model>ViraXpress\Rma\Block\Adminhtml\System\Config\Form\Field\InspectionStatusList</frontend_model>
+                </field>
+            </group>
+        </section>
+        <section id="rma_email" translate="label" sortOrder="900" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>RMA Email Configurations</label>
+            <tab>rma</tab>
+            <resource>ViraXpress_Rma::config_rma_email</resource>
+            <group id="new_request" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>New RMA Request</label>
+                <field id="enabled" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enabled</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Turn the new‑request e‑mail on or off.</comment>
+                </field>
+                <field id="sender_identity" translate="label" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Email Sender</label>
+                    <source_model>Magento\Config\Model\Config\Source\Email\Identity</source_model>
+                </field>
+                <field id="template" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Email Template</label>
+                    <source_model>Magento\Config\Model\Config\Source\Email\Template</source_model>
+                </field>
+                <field id="send_to_admin" translate="label" type="select" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Send copy to Admin?</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+
+                <field id="admin_email" translate="label" type="text" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Admin Email Address</label>
+                    <validate>email</validate>
+                    <depends>
+                        <field id="send_to_admin">1</field>
+                    </depends>
+                </field>
+                <field id="admin_template" translate="label" type="select" sortOrder="70" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Admin Email Template</label>
+                    <depends>
+                        <field id="send_to_admin">1</field>
+                    </depends>
+                    <source_model>Magento\Config\Model\Config\Source\Email\Template</source_model>
+                </field>
+            </group>
+
+            <group id="status_update" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>RMA Status Update</label>
+                <field id="enabled" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enabled</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="template" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Status Email Template</label>
+                    <source_model>Magento\Config\Model\Config\Source\Email\Template</source_model>
+                </field>
+            </group>
+
+            <group id="replacement_mail" translate="label" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>RMA Replacement Mail</label>
+                <field id="enabled" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enabled</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="template" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Replacement Email Template</label>
+                    <source_model>Magento\Config\Model\Config\Source\Email\Template</source_model>
+                </field>
+                <field id="send_to_admin" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Send copy to Admin?</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="admin_email" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Admin Email Address</label>
+                    <validate>email</validate>
+                    <depends>
+                        <field id="send_to_admin">1</field>
+                    </depends>
+                </field>
+            </group>
+            <group id="refund_mail" translate="label" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>RMA Refund Mail</label>
+                <field id="enabled" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enabled</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="template" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Refund Email Template</label>
+                    <source_model>Magento\Config\Model\Config\Source\Email\Template</source_model>
+                </field>
+                <field id="send_to_admin" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Send copy to Admin?</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="admin_email" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Admin Email Address</label>
+                    <validate>email</validate>
+                    <depends>
+                        <field id="send_to_admin">1</field>
+                    </depends>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

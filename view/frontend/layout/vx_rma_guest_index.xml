@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" layout="1column" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+    <referenceContainer name="sidebar.main" remove="true"/>
+        <referenceContainer name="sidebar.additional" remove="true"/>
+        <referenceBlock name="catalog.compare.sidebar" remove="true" />
+        <referenceBlock name="wishlist_sidebar" remove="true" />
+
+        <referenceContainer name="content">
+            <block class="ViraXpress\Rma\Block\Lookup" name="rma_lookup_form" template="ViraXpress_Rma::lookup.phtml" cacheable="false"/>
+        </referenceContainer>
+        <referenceContainer name="before.body.end">
+            <block class="ViraXpress\Rma\Block\Lookup" name="rma_lookup_script" template="ViraXpress_Rma::js/rma_lookup_script.phtml"/>
+        </referenceContainer>
+    </body>
+</page>

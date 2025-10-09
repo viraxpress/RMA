@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" layout="admin-2columns-left" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+   <body>
+       <referenceContainer name="left">
+           <referenceBlock name="sales_order_tabs">
+               <action method="addTab">
+                   <argument name="name" xsi:type="string">order_rma</argument>
+                   <argument name="block" xsi:type="string">ViraXpress\Rma\Block\Adminhtml\Order\View\Tab\Rma</argument>
+               </action>
+           </referenceBlock>
+       </referenceContainer>
+       <referenceBlock name="order_items">
+            <action method="setItemRenderer">
+                <argument name="type" xsi:type="string">default</argument>
+                <argument name="block" xsi:type="string">Magento\Sales\Block\Adminhtml\Items\Column\DefaultColumn</argument>
+                <argument name="template" xsi:type="string">ViraXpress_Rma::items/renderer/replacement.phtml</argument>
+            </action>
+        </referenceBlock>
+   </body>
+</page>

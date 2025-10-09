@@ -1,0 +1,141 @@
+<?xml version="1.0"?>
+<!-- /**
+ * ViraXpress - https://www.viraxpress.com
+ *
+ * LICENSE AGREEMENT
+ *
+ * This file is part of the ViraXpress package and is licensed under the ViraXpress license agreement.
+ * You can view the full license at:
+ * https://www.viraxpress.com/license
+ *
+ * By utilizing this file, you agree to comply with the terms outlined in the ViraXpress license.
+ *
+ * DISCLAIMER
+ *
+ * Modifications to this file are discouraged to ensure seamless upgrades and compatibility with future releases.
+ *
+ * @category    ViraXpress
+ * @package     ViraXpress_Rma
+ * @author      ViraXpress
+ * @copyright   © 2024 ViraXpress (https://www.viraxpress.com/)
+ * @license     https://www.viraxpress.com/license
+ */ -->
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+
+    <!-- Existing RMA Requests Table -->
+    <table name="viraxpress_rma_requests" resource="default" engine="innodb" comment="RMA Requests">
+        <column xsi:type="int" name="rma_id" padding="10" unsigned="true" nullable="false" identity="true" comment="RMA ID"/>
+        <column xsi:type="int" name="customer_id" padding="10" unsigned="true" nullable="false" comment="Customer ID"/>
+        <column xsi:type="int" name="order_id" padding="10" unsigned="true" nullable="false" comment="Order ID"/>
+        <column xsi:type="varchar" name="resolution" nullable="false" length="255" comment="Resolution"/>
+        <column xsi:type="varchar" name="status" nullable="false" length="64"  comment="RMA Status"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP" on_update="false" comment="Created At"/>
+        <column xsi:type="timestamp" name="updated_at" nullable="false" default="CURRENT_TIMESTAMP" on_update="true" comment="Updated At"/>
+
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="rma_id"/>
+        </constraint>
+
+        <constraint xsi:type="foreign" referenceId="FK_RMA_ORDER_ID_SALES_ORDER_ENTITY_ID" table="viraxpress_rma_requests" column="order_id"
+                    referenceTable="sales_order" referenceColumn="entity_id" onDelete="CASCADE"/>
+
+        <index indexType="btree" referenceId="IDX_RMA_ORDER_ID">
+            <column name="order_id"/>
+        </index>
+        <index indexType="btree" referenceId="IDX_RMA_STATUS">
+            <column name="status"/>
+        </index>
+    </table>
+    <table name="viraxpress_rma_items" resource="default" engine="innodb" comment="RMA Request Items">
+        <column xsi:type="int" name="item_id" padding="10" unsigned="true" nullable="false" identity="true" comment="Item ID"/>
+        <column xsi:type="int" name="rma_id" padding="10" unsigned="true" nullable="false" comment="RMA ID"/>
+        <column xsi:type="int" name="product_id" padding="10" unsigned="true" nullable="false" comment="Product ID"/>
+        <column xsi:type="int" name="qty_requested" padding="10" unsigned="true" nullable="false" default="1" comment="Quantity Requested"/>
+        <column xsi:type="int" name="qty_received" padding="10" unsigned="true" nullable="true" default="0" comment="Quantity Received"/>
+        <column xsi:type="varchar" name="reason" nullable="true" length="255" comment="Return Reason"/>
+        <column xsi:type="varchar" name="condition" nullable="true" length="255" comment="Item Condition"/>
+        <column xsi:type="varchar" name="resolution" nullable="true" length="255" comment="Resolution"/>
+        <column xsi:type="varchar" name="status" nullable="false" length="64" comment="Product Status"/>
+        <column xsi:type="int" name="is_returned" padding="10" unsigned="true" nullable="false" comment="Return"/>
+        <column xsi:type="int" name="is_replaced" padding="10" unsigned="true" nullable="false" comment="Replace"/>
+        <column xsi:type="int" name="is_moved_to_inspection" padding="10" unsigned="true" nullable="false" comment="Replace"/>
+        <column xsi:type="int" name="replacement_order_id" padding="10" unsigned="true" nullable="false" comment="Replacement Order ID"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="item_id"/>
+        </constraint>
+
+        <constraint xsi:type="foreign" referenceId="FK_RMA_ITEM_RMA_ID" table="viraxpress_rma_items" column="rma_id"
+                    referenceTable="viraxpress_rma_requests" referenceColumn="rma_id" onDelete="CASCADE"/>
+        <index indexType="btree" referenceId="IDX_RMA_ITEM_RMA_ID">
+            <column name="rma_id"/>
+        </index>
+    </table>
+    <table name="viraxpress_rma_item_images" resource="default" engine="innodb" comment="RMA Item Images">
+        <column xsi:type="int" name="image_id" padding="10" unsigned="true" nullable="false" identity="true" comment="Image ID"/>
+        <column xsi:type="int" name="item_id" padding="10" unsigned="true" nullable="false" comment="RMA Item ID"/>
+        <column xsi:type="varchar" name="image_name" length="255" nullable="false" comment="Image Filename"/>
+
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="image_id"/>
+        </constraint>
+
+        <constraint xsi:type="foreign" referenceId="FK_RMA_IMAGE_ITEM_ID" table="viraxpress_rma_item_images" column="item_id"
+                referenceTable="viraxpress_rma_items" referenceColumn="item_id" onDelete="CASCADE"/>
+        <index indexType="btree" referenceId="IDX_RMA_IMAGE_ITEM_ID">
+            <column name="item_id"/>
+        </index>
+    </table>
+
+    <!-- New Item Inspection Table -->
+    <table name="viraxpress_rma_item_inspection" resource="default" engine="innodb" comment="RMA Item Inspection">
+        <column xsi:type="int" name="inspection_id" unsigned="true" nullable="false" identity="true" comment="Inspection ID"/>
+        <column xsi:type="int" name="rma_id" unsigned="true" nullable="false" comment="RMA ID"/>
+        <column xsi:type="int" name="item_id" unsigned="true" nullable="false" comment="Order Item ID"/>
+        <column xsi:type="varchar" name="sku" length="64" nullable="false" comment="Product SKU"/>
+        <column xsi:type="int" name="product_id" padding="10" unsigned="true" nullable="false" comment="Product ID"/>
+        <column xsi:type="decimal" name="qty_received" scale="4" precision="12" nullable="false" default="1" comment="Quantity Received"/>
+        <column xsi:type="text" name="condition" nullable="true" comment="Item Condition After Inspection"/>
+        <column xsi:type="text" name="test_results" nullable="true" comment="Test Results"/>
+        <column xsi:type="varchar" name="restockable" nullable="true" length="20" comment="Is Item Restockable"/>
+        <column xsi:type="varchar" name="inspection_status" length="32" nullable="false" default="Pending" comment="Inspection Status"/>
+        <column xsi:type="varchar" name="action_taken" length="32" nullable="true" comment="Action Taken (restock/refurbish/scrap)"/>
+        <column xsi:type="varchar" name="restock_location" length="255" nullable="true" comment="Restock Location"/>
+        <column xsi:type="text" name="refurbished_notes" nullable="true" comment="Refurbished Notes"/>
+        <column xsi:type="text" name="scrap_reason" nullable="true" comment="Scrap Reason"/>
+        <column xsi:type="varchar" name="inspected_by"  length="255" nullable="true" comment="Admin User who inspected"/>
+        <column xsi:type="date" name="inspected_at" nullable="true" comment="Inspection Date"/>
+
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP" on_update="false" comment="Created At"/>
+        <column xsi:type="timestamp" name="updated_at" nullable="false" default="CURRENT_TIMESTAMP" on_update="true" comment="Updated At"/>
+
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="inspection_id"/>
+        </constraint>
+
+        <constraint xsi:type="foreign" referenceId="FK_INSPECTION_RMA_ID" table="viraxpress_rma_item_inspection" column="rma_id"
+                    referenceTable="viraxpress_rma_requests" referenceColumn="rma_id" onDelete="CASCADE"/>
+
+        <constraint xsi:type="foreign" referenceId="FK_INSPECTION_ITEM_ID" table="viraxpress_rma_item_inspection" column="item_id"
+                    referenceTable="viraxpress_rma_items" referenceColumn="item_id" onDelete="CASCADE"/>
+
+        <index indexType="btree" referenceId="IDX_INSPECTION_RMA_ID">
+            <column name="rma_id"/>
+        </index>
+        <index indexType="btree" referenceId="IDX_INSPECTION_ITEM_ID">
+            <column name="item_id"/>
+        </index>
+        <index indexType="btree" referenceId="IDX_INSPECTION_STATUS">
+            <column name="inspection_status"/>
+        </index>
+    </table>
+    <table name="sales_order" resource="default" engine="innodb" comment="Sales Flat Order">
+        <column xsi:type="varchar" length="255" name="return_date" nullable="true"
+                comment="Return window from RMA Config"/>
+    </table>
+
+    <table name="sales_order_grid"  resource="default" engine="innodb" comment="Sales Flat Order Grid">
+        <column xsi:type="varchar" length="255" name="return_date" nullable="true"
+                comment="Return window from RMA Config"/>
+    </table>
+</schema>

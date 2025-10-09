@@ -1,0 +1,618 @@
+<?php
+/**
+ * ViraXpress - https://www.viraxpress.com
+ *
+ * LICENSE AGREEMENT
+ *
+ * This file is part of the ViraXpress package and is licensed under the ViraXpress license agreement.
+ * You can view the full license at:
+ * https://www.viraxpress.com/license
+ *
+ * By utilizing this file, you agree to comply with the terms outlined in the ViraXpress license.
+ *
+ * DISCLAIMER
+ *
+ * Modifications to this file are discouraged to ensure seamless upgrades and compatibility with future releases.
+ *
+ * @category    ViraXpress
+ * @package     ViraXpress_Rma
+ * @author      ViraXpress
+ * @copyright   © 2024 ViraXpress (https://www.viraxpress.com/)
+ * @license     https://www.viraxpress.com/license
+ */
+/** @var $block \ViraXpress\Rma\Block\Adminhtml\Rma\Items */
+ // @phpcs:disable Generic.Files.LineLength
+
+$items = $block->getOrderItems();
+$order =$block->getOrder();
+$returnReasons = $block->getReturnReasons();
+$returnResolutions = $block->getReturnResolutions();
+$itemConditions = $block->getItemConditions();
+
+?>
+<style>
+    .data-grid {
+        min-width: 1000px;
+    }
+
+    .custom-uploader {
+        width: 120px;
+        height: 120px;
+        border: 2px dashed #ccc;
+        position: relative;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #fafafa;
+    }
+    .upload-dropzone {
+        width: 100%;
+        height: 100%;
+        color: #999;
+        text-align: center;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .upload-dropzone:hover {
+        background-color: #f0f0f0;
+    }
+
+    .upload-placeholder {
+        pointer-events: none;
+        font-size: 12px;
+        text-align: center;
+        color: #999;
+    }
+
+    .upload-input {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    /* Preview + uploader aligned horizontally */
+    .upload-preview-wrapper,
+    .upload-preview {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 10px;
+        width:fit-content;
+    }
+
+
+    .upload-preview-wrapper{
+        margin-top: 10px;
+
+    }
+
+    .upload-preview .preview-content {
+        width: 120px !important;
+        height: 120px !important;
+        object-fit: cover;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        display: block;
+        cursor: pointer;
+    }
+
+    .upload-preview .preview-fallback {
+        width: 120px;
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f0f0f0;
+        font-size: 12px;
+        text-align: center;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+
+    /* Remove button */
+    .upload-preview .remove-btn {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: rgba(250, 22, 22,0.8);
+        border: none;
+        font-weight: bold;
+        color: white;
+        cursor: pointer;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        line-height: 16px;
+        text-align: center;
+        padding: 0;
+    }
+    .qty-error-tooltip {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background-color: #f44336;
+        color: white;
+        padding: 5px 10px;
+        font-size: 12px;
+        border-radius: 4px;
+        white-space: nowrap;
+        z-index: 10;
+        margin-top: 3px;
+    }
+
+</style>
+<div style="overflow-x: auto; max-width: 100%;">
+    <table class="data-grid">
+        <thead>
+            <tr class="data-grid-tr">
+                <th class="data-grid-th">Select</th>
+                <th class="data-grid-th">Product Name</th>
+                <th class="data-grid-th">SKU</th>
+                <th class="data-grid-th">Price</th>
+                <th class="data-grid-th">Ordered Quantity</th>
+                <th class="data-grid-th">Total amount</th>
+                <th class="data-grid-th">Quantity returnable</th>
+                <th class="data-grid-th">Reason</th>
+                <th class="data-grid-th">Condition</th>
+                <th class="data-grid-th">Resolution</th>
+                <?php if ($block->isFileUploadAllowed()): ?>
+                    <th class="data-grid-th">Attachments</th>
+                <?php endif; ?>
+            </tr>
+        </thead>
+        <tbody>
+            <?php
+            $previousRmaQty = $block->getPreviouslyRequestedQtyMap($order->getId());
+            foreach ($items as $item):
+                if ($block->isItemAllowedCategory($item) && $block->isItemAllowedProductType($item)) {
+                    $validatedItemIdsMap[$order->getId()][] = $item->getId();
+                }
+
+                $proId = (int)$item->getProductId();
+                $orderedQty = (int)$item->getQtyOrdered();
+                $returnedQty = $previousRmaQty[$proId] ?? 0;
+                $maxReturnable = $orderedQty - $returnedQty;
+                $orderTotalFormatted = strip_tags($order->formatPrice($item->getRowTotal()));
+                $disabled = ($maxReturnable == 0) ? 'disabled' : '';
+                $disabledText=($maxReturnable ==0)?"Can't create Return/Replacement for this item":'';
+                ?>
+            <tr class="data-grid-tr" 
+                data-item-id="<?= $escaper->escapeHtmlAttr($item->getId()) ?>">
+                <td class="data-grid-td" 
+                    id="checkbox-<?= $escaper->escapeHtmlAttr($item->getId()) ?>"
+                    title="<?= $escaper->escapeHtmlAttr($disabledText) ?>"
+                    data-field="checkbox">
+                    <input class="item-checkbox"
+                        <?= $escaper->escapeHtmlAttr($disabled)?>
+                        data-item-id="<?= $escaper->escapeHtmlAttr($item->getId()) ?>"
+                        data-product-id="<?= $escaper->escapeHtmlAttr($proId) ?>"
+                        type="checkbox"
+                        name="selected[<?= $escaper->escapeHtmlAttr($item->getId()) ?>]" />
+                </td>
+                <td class="data-grid-td item-inputs" 
+                    id="name-<?= $escaper->escapeHtmlAttr($item->getId()) ?>" 
+                    data-field="name">
+                    <p style="width:100px;"><?= $escaper->escapeHtml($item->getName()) ?></p>
+                </td>
+                <td class="data-grid-td item-inputs" 
+                    id="sku-<?= $escaper->escapeHtmlAttr($item->getId()) ?>" 
+                    data-field="sku">
+                    <p style="width:100px;"><?= $escaper->escapeHtml($item->getSku()) ?></p>
+                </td>
+                <td class="data-grid-td item-inputs" 
+                    id="price-<?= $escaper->escapeHtmlAttr($item->getId()) ?>" 
+                    data-field="price">
+                    <p style="width:80px;"><?= /** noescape */ $order->formatPrice($item->getPrice()) ?></p>
+                </td>
+                <td class="data-grid-td item-inputs" 
+                    id="qty_ordered-<?= $escaper->escapeHtmlAttr($item->getId()) ?>" 
+                    data-field="qty_ordered">
+                    <p style="width:50px;"><?= $escaper->escapeHtml($orderedQty) ?></p>
+                </td>
+                <td class="data-grid-td item-inputs item-inputs-<?= $escaper->escapeHtmlAttr($item->getId()) ?>" id="amount_returned-<?= $escaper->escapeHtmlAttr($item->getId())?>"
+                    data-field="amount_returned">
+                    <input type="text"
+                        name="amount_returned[<?= $escaper->escapeHtmlAttr($item->getId()) ?>]"
+                        value="<?= $escaper->escapeHtmlAttr($orderTotalFormatted) ?>"
+                        readonly
+                        class="admin__control-text amount-returned-input" />
+                </td>
+                <td class="data-grid-td item-inputs item-inputs-<?= $escaper->escapeHtmlAttr($item->getId()) ?>" id="qty_returned-<?= $escaper->escapeHtmlAttr($item->getId()) ?>"
+                    data-field="qty_returned">
+                    <div class="qty-wrapper" style="position:relative;top:18px;width:150px;gap:10px;">
+                        <input type="number"
+                            name="qty_returned[<?= $escaper->escapeHtmlAttr($item->getId()) ?>]"
+                            class="admin__control-text qty-returned"
+                            value="1"
+                            min="1"
+                            max="<?= $escaper->escapeHtmlAttr($orderedQty) ?>"
+                            data-returnable="<?= $escaper->escapeHtmlAttr($maxReturnable) ?>"
+                            data-item-id="<?= $escaper->escapeHtmlAttr($item->getId()) ?>"
+                            style="width:100%;" />
+                            <br><br>
+                            <span>Max qty returnable<?= $escaper->escapeHtmlAttr($maxReturnable) ?></span>
+                        
+                        <div class="qty-error-tooltip" style="display:none;"></div>
+                    </div>
+                </td>
+                <td class="data-grid-td item-inputs item-inputs-<?= $escaper->escapeHtmlAttr($item->getId()) ?>" 
+                    id="reason-<?= $escaper->escapeHtmlAttr($item->getId()) ?>" 
+                    data-field="reason">
+                    <select name="reason[<?= $escaper->escapeHtmlAttr($item->getId()) ?>]" 
+                            class="admin__control-select">
+                        <?php foreach ($returnReasons as $reason): ?>
+                            <option value="<?= $escaper->escapeHtmlAttr($reason) ?>">
+                                <?= $escaper->escapeHtml($reason) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </td>
+                <td class="data-grid-td item-inputs item-inputs-<?= $escaper->escapeHtmlAttr($item->getId()) ?>" id="condition-<?= $escaper->escapeHtmlAttr($item->getId()) ?>"
+                    data-field="condition">
+                    <select name="condition[<?= $escaper->escapeHtmlAttr($item->getId()) ?>]" 
+                            class="admin__control-select">
+                        <?php foreach ($itemConditions as $condition): ?>
+                            <option value="<?= $escaper->escapeHtmlAttr($condition) ?>">
+                                <?= $escaper->escapeHtml($condition) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </td>
+                <td class="data-grid-td item-inputs item-inputs-<?= $escaper->escapeHtmlAttr($item->getId()) ?>" id="solution-<?= $escaper->escapeHtmlAttr($item->getId()) ?>"
+                    data-field="solution">
+                    <select name="solution[<?= $escaper->escapeHtmlAttr($item->getId()) ?>]" 
+                        class="admin__control-select">
+                        <?php foreach ($returnResolutions as $resolution): ?>
+                            <option value="<?= $escaper->escapeHtmlAttr($resolution) ?>">
+                                <?= $escaper->escapeHtml($resolution) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </td>
+                <?php if ($block->isFileUploadAllowed()):
+                    $allowedTypes = $block->getAllowedFileTypes();
+                    $acceptAttr = implode(',', array_map(fn($ext) => '.' . ltrim($ext, '.'), $allowedTypes));
+                    ?>
+                <td class="data-grid-td item-inputs item-inputs-<?= $escaper->escapeHtmlAttr($item->getId()) ?>" id="upload-<?= $escaper->escapeHtmlAttr($item->getId()) ?>"
+                    data-field="upload">
+                    <div class="rma-item rma-item-image-container"
+                        id="custom-uploader-<?= $escaper->escapeHtmlAttr($item->getId()) ?>">
+                        <label><?= $escaper->escapeHtml(__('Upload Attachment:')) ?></label>
+                        <div class="upload-preview-wrapper"
+                            id="upload-preview-wrapper-<?= $escaper->escapeHtmlAttr($item->getId()) ?>">
+                            <div class="upload-preview"></div>
+                            <div class="custom-uploader">
+                                <div class="upload-dropzone" tabindex="0">
+                                    <span class="upload-placeholder">
+                                        <?= $escaper->escapeHtml(__('Click or drag')) ?>
+                                    </span>
+                                    <input type="file"
+                                        multiple
+                                        accept="<?= $escaper->escapeHtmlAttr($acceptAttr) ?>"
+                                        class="upload-input" />
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="upload_images_data[]" class="file-name-input" />
+                    </div>
+                </td>
+                <?php endif; ?>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
+
+<script>
+        require([
+                'jquery',
+                'Magento_Ui/js/modal/modal',
+                'Magento_Ui/js/modal/alert',
+                'mage/loader',
+                'Magento_Ui/js/form/element/file-uploader',
+            ], function ($, modal, alert) {
+                
+                $(document).on('click', '#rma-save', function (e) {
+                    var form = $('#return-form');
+                    var orderId = <?= $escaper->escapeJs($order->getId())?>;
+                    var selectedItems = [];
+                    var rmaStatus=$('#rma_status').val();
+                    const requestData = {
+                        order_id: orderId,
+                        status: rmaStatus,
+                        customer_id: "<?= $escaper->escapeJs($order->getCustomerId()); ?>",
+                        customer_email: "<?= $escaper->escapeJs($order->getCustomerEmail()); ?>",
+                        customer_name: "<?= $escaper->escapeJs($order->getCustomerFirstname() . ' ' .
+                                            $order->getCustomerLastname()); ?>"
+                    };
+
+                    form.find('.item-checkbox:checked').each(function () {
+                        const itemId = $(this).data('item-id'); 
+                        const productId = $(this).data('product-id');
+                        const qty = parseInt($(`[name="qty_returned[${itemId}]"]`).val(), 10) || 0;
+                        const reason = $(`[name="reason[${itemId}]"]`).val() || '';
+                        const condition = $(`[name="condition[${itemId}]"]`).val() || '';
+                        const resolutions = $(`[name="solution[${itemId}]"]`).val() || '';
+
+
+                        const fileInput = $(`#custom-uploader-${itemId}`).find('.file-name-input');
+                        let uploadedImages = [];
+                        try {
+                            const val = fileInput.val();
+                            if (val) {
+                                uploadedImages = JSON.parse(val);
+                            }
+                        } catch (e) {
+                            console.error('Failed to parse uploaded image data for item ID ' + itemId, e);
+                        }
+
+                        selectedItems.push({
+                            product_id: productId,
+                            qty_requested: qty,
+                            qty_received: 0,
+                            reason: reason,
+                            condition: condition,
+                            resolutions: resolutions,
+                            status: "Pending",
+                            images: uploadedImages
+                        });
+                    });
+                    if (!selectedItems.length) {
+                        alert({
+                            title: $.mage.__('Validation Error'),
+                            content: $.mage.__('Please select at least one item to return.')
+                        });
+                        return;
+                    }
+
+                    const finalData = {
+                        request: requestData,
+                        items: selectedItems,
+                    };
+
+                    $('body').loader('show');
+                    $.ajax({
+                        url: `<?= $escaper->escapeUrl($block->getUrl("vx_rma/rma/save")) ?>
+                        ?form_key=<?= $escaper->escapeUrl($block->getFormKey()) ?>`,
+
+                        type: 'POST',
+                        data: JSON.stringify(finalData),
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        showLoader: true,
+                        success: function (response) {
+                            if (response.success) {
+                                setTimeout(function () {
+                                    $('body').loader('hide');
+                                    alert({
+                                        title: $.mage.__('Success'),
+                                        content: $.mage.__('Return request submitted successfully.'),
+                                        actions: {
+                                            always: function () {
+                                                window.location.href ="<?= $escaper->escapeUrl($block->getUrl('vx_rma/rma/index')) ?>";
+                                            }
+                                        }
+                                    });
+                                }, 1000);
+                            }
+                            else {
+                                $('body').loader('hide');
+                                alert({
+                                    title: $.mage.__('Error'),
+                                    content: response.message || $.mage.__('Something went wrong.')
+                                });
+                            }
+                        },
+                        error: function (xhr) {
+                            $('body').loader('hide');
+                            alert({
+                                title: $.mage.__('AJAX Error'),
+                                content: $.mage.__('AJAX error: ') + xhr.status + ' - ' + xhr.statusText
+                            });
+                        }
+                    });
+                });
+
+                $(document).on('change', '.item-checkbox', function () {
+                    const itemId = $(this).data('item-id');
+
+                    const inputs = $(`.item-inputs-${itemId} input, .item-inputs-${itemId} select`);
+
+                    if (this.checked) {
+                        inputs.prop('disabled', false);
+                    } else {
+                        inputs.prop('disabled', true);
+                        inputs.filter('.qty-error').text('');
+                    }
+                });
+                
+                function validateAllReturnQtyInputs() {
+                    let hasErrors = false;
+
+                    $('.qty-returned').each(function () {
+                        const $input = $(this);
+                        const itemId = $(this).data('item-id');
+                        const val = parseInt($input.val(), 10);
+                        const min = parseInt($input.attr('min'), 10) || 1;
+                        const max = parseInt($input.attr('max'), 10);
+                        const returnable = parseInt($input.data('returnable'), 10);
+                        const $errorTooltip = $input.closest('.qty-wrapper').find('.qty-error-tooltip');
+                        const $checkbox   = $('.item-checkbox[data-item-id="' + itemId + '"]');
+                            if (!$checkbox.prop('checked')) {
+                                $errorTooltip.hide();
+                                return;
+                            }
+                        let errorMsg = '';
+                        if (isNaN(val) || val < min) {
+                            errorMsg = `Minimum quantity is ${min}`;
+                        }
+                        else if (val > returnable) {
+                            errorMsg = `Only ${returnable} item(s) available for return`;
+                        } else if (val > max) {
+                            errorMsg = `Cannot exceed ordered quantity (${max})`;
+                        }
+
+                        if (errorMsg) {
+                            hasErrors = true;
+                            $errorTooltip.text(errorMsg).show();
+                        } else {
+                            $errorTooltip.hide();
+                        }
+                    });
+
+                    $('#rma-save').prop('disabled', hasErrors);
+                }
+
+                $(document).on('input change keyup', '.qty-returned', function () {
+                    validateAllReturnQtyInputs();
+                });
+
+                // Trigger once initially
+                validateAllReturnQtyInputs();
+                //Image Uploader
+                $(document).ready(function () {
+                    $('.item-inputs input, .item-inputs select').prop('disabled', true);
+                    const uploadedImagesMap = {};
+
+                    // Handle new file uploads
+                    const MAX_FILE_SIZE = <?= $escaper->escapeJs(
+                        $block->getMaxFileSize()
+                    ) * 1024 * 1024 ?>; 
+                    const ALLOWED_EXTENSIONS = <?=  /** noescape */json_encode($block->getAllowedFileTypes()) ?>;
+                    const MAX_FILE_COUNT = <?= (int)$block->getMaxFileCount() ?>;
+                    function handleFiles(files, preview, key) {
+                        if (!uploadedImagesMap[key]) {
+                            uploadedImagesMap[key] = [];
+                        }
+
+                        const uploader = $('#' + key);
+                        const fileNameInput = uploader.find('.file-name-input');
+
+                        const existingCount = uploadedImagesMap[key].length;
+                        const remainingSlots = MAX_FILE_COUNT - existingCount;
+
+                        const validFiles = [];
+
+                        // Filter valid files and enforce count limit
+                        for (let i = 0; i < files.length; i++) {
+                            const file = files[i];
+
+                            if (validFiles.length >= remainingSlots) {
+                                alert({
+                                    title: $.mage.__('Maximum Upload Limit Reached'),
+                                    content: $.mage.__(`You can upload up to ${MAX_FILE_COUNT} files.`)
+                                });
+                                break;
+                            }
+
+                            const extension = file.name.split('.').pop().toLowerCase();
+                            const isAllowed = ALLOWED_EXTENSIONS.includes(extension);
+
+                            if (!isAllowed) {
+                                alert({
+                                    title: $.mage.__(`Invalid File Type: ${file.name}`),
+                                    content: $.mage.__(`Allowed types: ${ALLOWED_EXTENSIONS.join(', ')}`)
+                                });
+                                continue;
+                            }
+
+                            if (file.size > MAX_FILE_SIZE) {
+                                alert({
+                                    title: $.mage.__(`File too large: ${file.name}`),
+                                    content: $.mage.__(`Max allowed size is ${Math.round(MAX_FILE_SIZE / 1024 / 1024)}MB`)
+                                });
+                                continue;
+                            }
+
+                            validFiles.push(file);
+                        }
+
+                        // Now process only the validated files
+                        validFiles.forEach(file => {
+                            const reader = new FileReader();
+                            reader.onload = function (e) {
+                                const imageData = e.target.result;
+
+                                if (uploadedImagesMap[key].some(item => item.data === imageData)) return;
+
+                                uploadedImagesMap[key].push({
+                                    data: imageData,
+                                    name: file.name
+                                });
+                                if (uploadedImagesMap[key].length >= MAX_FILE_COUNT) {
+                                    uploader.find('.upload-input').prop('disabled', true).addClass('disabled');
+                                }
+
+                                const imgWrapper = $('<div>').css('position', 'relative');
+                                let previewElement;
+
+                                if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(file.name.split('.').pop().toLowerCase())) {
+                                    previewElement = $('<img>')
+                                        .attr('src', imageData)
+                                        .addClass('preview-content');
+                                } else if (file.name.split('.').pop().toLowerCase() === 'pdf') {
+                                    previewElement = $('<embed>')
+                                        .attr('src', imageData)
+                                        .attr('type', 'application/pdf')
+                                        .addClass('preview-content');
+                                } else {
+                                    previewElement = $('<div>').addClass('preview-fallback')
+                                        .text(file.name);
+                                }
+
+                                const removeBtn = $('<button>')
+                                    .addClass('remove-btn')
+                                    .html('&times;')
+                                    .on('click', function () {
+                                        const index = uploadedImagesMap[key].findIndex(img => img.data === imageData);
+                                        if (index > -1) uploadedImagesMap[key].splice(index, 1);
+                                        imgWrapper.remove();
+
+                                        const updatedNames = uploadedImagesMap[key];
+                                        fileNameInput.val(JSON.stringify(updatedNames));
+                                        if (uploadedImagesMap[key].length < MAX_FILE_COUNT) {
+                                            uploader.find('.upload-input').prop('disabled', false).removeClass('disabled');
+                                        }
+                                    });
+
+                                imgWrapper.append(previewElement).append(removeBtn);
+                                preview.append(imgWrapper);
+                                fileNameInput.val(JSON.stringify(uploadedImagesMap[key]));
+                            };
+                            reader.readAsDataURL(file);
+                        });
+                    }
+                      // Handle input change via delegation
+                    $(document).on('change', '.rma-item-image-container .upload-input', function (e) {
+                        const uploader = $(this).closest('.rma-item-image-container');
+                        const preview = uploader.find('.upload-preview');
+                        const uploaderId = uploader.attr('id');
+                        handleFiles(e.target.files, preview, uploaderId);
+                        $(this).val('');
+                    });
+
+                    $(document).on('dragover', '.custom-uploader .upload-dropzone', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        $(this).addClass('dragover');
+                    });
+
+                    $(document).on('dragleave', '.custom-uploader .upload-dropzone', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        $(this).removeClass('dragover');
+                    });
+
+                    $(document).on('drop', '.rma-item-image-container .upload-dropzone', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                  

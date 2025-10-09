@@ -1,0 +1,168 @@
+<?php
+/** @var \ViraXpress\Rma\Block\Lookup $block */
+// @phpcs:disable Generic.Files.LineLength
+$formKey        = $block->getFormKey();
+
+?>
+<script>
+function otpLookupComponent() {
+    return {
+        form: {order_id: '', lastname: '', email: '' },
+        userOtp: '',
+        otpData: {},
+        otpVerifyUrl: '',
+        verifyOtpUrl: '',
+        formKey: '<?=  $escaper->escapeJs($formKey) ?>',
+        showOtpModal: false,
+        countdown: 30,
+        countdownTimer: null,
+        canResend: true,
+        displayLoading:false,
+        user_error: '',
+        errors: {
+            order_id: '',
+            lastname: '',
+            email: ''
+        },
+
+        initComponent(otpVerifyUrl, verifyOtpUrl) {
+            this.otpVerifyUrl = otpVerifyUrl;
+            this.verifyOtpUrl = verifyOtpUrl;
+        },
+        validateOtp() {
+            if(this.userOtp == ''){
+                this.user_error = "Required Field";
+                return false;
+            }
+            this.user_error = '';
+            return true;
+        },
+        validateField(field) {
+            if (field === 'order_id') {
+                this.errors.order_id = this.form.order_id.trim() === ''
+                    ? 'Required Field' : '';
+            }
+
+            if (field === 'lastname') {
+                this.errors.lastname = this.form.lastname.trim() === ''
+                    ? 'Required Field' : '';
+            }
+
+            if (field === 'email') {
+                if (this.form.email.trim() === '') {
+                    this.errors.email = 'Required Field';
+                } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email)) {
+                    this.errors.email = 'Please enter a valid email';
+                } else {
+                    this.errors.email = '';
+                }
+            }
+        },
+        validateFields() {
+            Object.keys(this.form).forEach(field => this.validateField(field));
+            return Object.values(this.errors).every(error => error === '');
+        },
+
+        submitLookup() {
+            this.displayLoading=true;
+            if (!this.validateFields()) {
+                this.displayLoading = false;
+                // displayMessages([{text: 'Please fix the highlighted errors.', type: "error"}]);
+                return;
+            }
+            if (!this.canResend) {
+                this.displayLoading=false;
+                this.showOtpModal = true;
+                return;
+            }
+            this.otpData = {
+                ...this.form,
+            };
+
+            fetch(this.otpVerifyUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: new URLSearchParams(this.otpData).toString()
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    this.displayLoading=false;
+                    this.showOtpModal = true;
+                    this.startCountdown(30);
+                } else {
+                    this.displayLoading=false;
+                    displayMessages([{text: data.message || 'Error sending OTP',type: "error"}]);
+                }
+            });
+        },
+
+        startCountdown(seconds) {
+            this.canResend = false;
+            this.countdown = seconds;
+            clearInterval(this.countdownTimer);
+            this.countdownTimer = setInterval(() => {
+                this.countdown--;
+                if (this.countdown <= 0) {
+                    clearInterval(this.countdownTimer);
+                    this.canResend = true;
+                }
+            }, 1000);
+        },
+        verifyOtp() {
+            if (!this.validateOtp()) {
+                return;
+            }
+            const payload = { ...this.otpData, user_otp: this.userOtp };
+            fetch(this.verifyOtpUrl, {
+                method: 'POST',
+                headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-Magento-Form-Key': this.formKey
+                        },
+                body: new URLSearchParams(payload).toString()
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = `/vx_rma/guest/view?order_id=${encodeURIComponent(this.otpData.order_id)}&lastname=${encodeURIComponent(this.otpData.lastname)}&email=${encodeURIComponent(this.otpData.email)}`;
+                } else {
+                    displayMessages([{text: data.message || 'Invalid OTP',type: "error"}]);
+                }
+            });
+        },
+
+        resendOtp() {
+            if (!this.canResend) return;
+            if (!this.validateFields()) {
+                this.displayLoading = false;
+                // displayMessages([{text: 'Please fix the highlighted errors.', type: "error"}]);
+                return;
+            }
+            this.userOtp="";
+            this.startCountdown(30);
+            fetch(this.otpVerifyUrl, {
+                method: 'POST',
+                headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-Magento-Form-Key': this.formKey
+                        },
+                body: new URLSearchParams(this.otpData).toString()
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    displayMessages([{text: 'OTP resent successfully',type: "success"}]);
+                } else {
+                    displayMessages([{text: data.message || 'Error resending OTP',type: "error"}]);
+                }
+            });
+        }
+    };
+}
+</script>

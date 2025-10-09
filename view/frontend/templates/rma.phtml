@@ -1,0 +1,326 @@
+<?php // @phpcs:disable Generic.Files.LineLength?>
+
+<div x-data='rmaComponent()' x-init="init()" class="w-full shadow-sm border border-gray-100 rounded-lg p-4 bg-white mb-6">
+    <!-- Custom Confirm Modal -->
+    <div class="relative z-[9999]">
+        <div x-show="confirmModal.show" x-transition x-cloak class="fixed flex items-center justify-center inset-0 bg-black/50 bg-opacity-25 transition-opacity" id="cancel-confirm-modal">
+            <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-xl">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4" x-text="confirmModal.title"></h2>
+                <p class="ttext-sm leading-6 m-0 mt-1 text-gray-800" x-text="confirmModal.message"></p>
+                <div class="flex justify-end gap-3">
+                    <button @click="confirmModal.reject()" class="inline-block text-sm leading-6 font-medium">
+                        <?= $escaper->escapeHtml(__('Cancel'))?>
+                    </button>
+                    <button @click="confirmModal.resolve()" class="submit-return action primary add primary-btn">
+                        <?= $escaper->escapeHtml(__('Confirm'))?>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Performance Stats (Dev Mode) -->
+    <div x-show="false" class="mb-2 p-2 bg-gray-100 rounded text-xs text-gray-600">
+        <?= $escaper->escapeHtml(__('Mode:'))?><span x-text="isServerMode ? 'Server' : 'Client'"></span> |
+        <?= $escaper->escapeHtml(__('Records:'))?> <span x-text="data.length"></span> |
+        <?= $escaper->escapeHtml(__('Filtered:'))?> <span x-text="filtered.length"></span> |
+        <?= $escaper->escapeHtml(__('Search:'))?> "<span x-text="search"></span>"
+    </div>
+    <!-- Wrapper -->
+    <template x-if="initialData.length > 0">
+        <div>
+            <!-- Header and Search -->
+            <div class="flex justify-between items-center mb-4">
+                <div class="relative w-1/2">
+                    <input
+                        type="text"
+                        x-model="search"
+                        placeholder="Search RMA # / Order # / Status"
+                        class="input-text block w-full rounded-md border-0 py-2.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                        :class="{ 'opacity-50': isLoading }"
+                        :disabled="isLoading"
+                    />
+                    <div class="absolute right-4 top-2 w-6 h-6 text-gray-500">
+                        <!-- Loading spinner -->
+                        <svg x-show="isLoading" class="animate-spin h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <!-- Search icon -->
+                        <svg x-show="!isLoading" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 w-72">
+                    <label for="page_size" class="cursor-pointer limiter-label mr-1 text-sm text-gray-700"><?= $escaper->escapeHtml(__('Show'))?></label>
+                    <select x-model.number="pageSize" id="page_size" class="cursor-pointer w-16 limiter-options text-sm rounded-md px-2 pr-8 py-2 ring-1 ring-inset ring-gray-300 text-gray-900" :disabled="isLoading">
+                        <option value="5"><?= $escaper->escapeHtml(__('5'))?></option>
+                        <option value="10"><?= $escaper->escapeHtml(__('10'))?></option>
+                        <option value="20"><?= $escaper->escapeHtml(__('20'))?></option>
+                        <option value="50"><?= $escaper->escapeHtml(__('50'))?></option>
+                    </select>
+                    <span class="text-sm text-gray-700 text-center">
+                        of <span x-text="totalRecords"></span>
+                        <!-- <span x-show="isServerMode" class="text-blue-600 text-xs">(server)</span> -->
+                    </span>
+                </div>
+            </div>
+            <div class="block overflow-x-auto">
+                <table class="min-w-full table border-collapse">
+                    <thead>
+                        <tr class="border-b border-gray-200 hidden md:table-row">
+                            <th class="col actions w-[115px]">
+                                <button type="button" @click="sortBy('rma_id')"
+                                    class="flex items-center text-left text-sm font-semibold text-gray-800 hover:text-blue-600 focus:outline-none"
+                                    :class="{ 'opacity-50 cursor-not-allowed': isLoading }" :disabled="isLoading">
+                                    <span><?= $escaper->escapeHtml(__('RMA #')) ?></span>
+                                    <svg x-show="sortKey === 'rma_id'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-1"
+                                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path :class="sortDir === 'asc' ? 'block' : 'hidden'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                        <path :class="sortDir === 'desc' ? 'block' : 'hidden'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                            </th>
+                            <th class="col actions w-[115px]">
+                                <button type="button" @click="sortBy('order_id')"
+                                    class="flex items-center text-left text-sm font-semibold text-gray-800 hover:text-blue-600 focus:outline-none"
+                                    :class="{ 'opacity-50 cursor-not-allowed': isLoading }" :disabled="isLoading">
+                                    <span><?= $escaper->escapeHtml(__('Order #')) ?></span>
+                                    <svg x-show="sortKey === 'order_id'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-1"
+                                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path :class="sortDir === 'asc' ? 'block' : 'hidden'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                        <path :class="sortDir === 'desc' ? 'block' : 'hidden'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                            </th>
+                            <th class="col actions w-[115px]">
+                                <button type="button" @click="sortBy('status')"
+                                    class="flex items-center text-left text-sm font-semibold text-gray-800 hover:text-blue-600 focus:outline-none"
+                                    :class="{ 'opacity-50 cursor-not-allowed': isLoading }" :disabled="isLoading">
+                                    <span><?= $escaper->escapeHtml(__('Status')) ?></span>
+                                    <svg x-show="sortKey === 'status'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-1"
+                                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path :class="sortDir === 'asc' ? 'block' : 'hidden'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                        <path :class="sortDir === 'desc' ? 'block' : 'hidden'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                            </th>
+                            <th class="col actions w-[115px]">
+                                <button type="button" @click="sortBy('created_at')"
+                                    class="flex items-center text-left text-sm font-semibold text-gray-800 hover:text-blue-600 focus:outline-none"
+                                    :class="{ 'opacity-50 cursor-not-allowed': isLoading }" :disabled="isLoading">
+                                    <span><?= $escaper->escapeHtml(__('Created At')) ?></span>
+                                    <svg x-show="sortKey === 'created_at'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-1"
+                                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path :class="sortDir === 'asc' ? 'block' : 'hidden'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                        <path :class="sortDir === 'desc' ? 'block' : 'hidden'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                            </th>
+                            <th class="col actions w-[115px]">
+                                <button type="button" @click="sortBy('updated_at')"
+                                    class="flex items-center text-left text-sm font-semibold text-gray-800 hover:text-blue-600 focus:outline-none"
+                                    :class="{ 'opacity-50 cursor-not-allowed': isLoading }" :disabled="isLoading">
+                                    <span><?= $escaper->escapeHtml(__('Updated At')) ?></span>
+                                    <svg x-show="sortKey === 'updated_at'" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-1"
+                                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path :class="sortDir === 'asc' ? 'block' : 'hidden'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                        <path :class="sortDir === 'desc' ? 'block' : 'hidden'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                            </th>
+                            <th class="col actions w-[115px]">
+                                <div class="p-2 text-center text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Actions'))?></div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <!-- Table Body -->
+                    <tbody :class="{ 'opacity-60': isLoading }">
+                        <template x-for="rma in paginated" :key="rma.rma_id">
+                            <tr class="cursor-pointer border-b border-gray-200 pb-4 mb-4 block md:table-row last:border-b-0 hover:bg-gray-50" 
+                                @click="openItemsModal(rma)"
+                                :class="{ 'pointer-events-none': isLoading }">
+                                <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2" x-text="rma.rma_id"></td>
+                                <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2" x-text="rma.order_id"></td>
+                                <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2">
+                                    <span x-text="rma.status"></span>
+                                </td>
+                                <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2" x-text="rma.created_at"></td>
+                                <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2" x-text="rma.updated_at"></td>
+                                <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2 text-center">
+                                    <template x-if="['Approved', 'Pending'].includes(rma.status)">
+                                        <button @click.stop="cancelRma(rma.rma_id)" 
+                                                class="action update secondary-btn flex-auto sm:flex-none"
+                                                :disabled="isLoading">
+                                            <?= $escaper->escapeHtml(__('Cancel'))?>
+                                        </button>
+                                    </template>
+                                    <template x-if="!['Approved', 'Pending'].includes(rma.status)">
+                                        <button class="action update secondary-btn flex-auto sm:flex-none opacity-50 cursor-not-allowed" disabled>
+                                            <?= $escaper->escapeHtml(__('Cancel'))?>
+                                        </button>
+                                    </template>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+    <!-- Loading State -->
+    <template x-if="isLoading && paginated.length === 0">
+        <div class="text-center py-8">
+            <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-gray-600"><?= $escaper->escapeHtml(__('Loading results...'))?></p>
+        </div>
+    </template>
+    <!-- No Results -->
+    <template x-if="!isLoading && paginated.length === 0">
+        <div class="overflow-x-auto rounded shadow border border-gray-300">
+            <table class="w-full table-auto text-left">
+                <thead>
+                    <tr>
+                        <th colspan="6" class="px-4 py-8 text-center">
+                            <div class="text-gray-500">
+                                <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <h3 class="text-lg font-medium text-gray-900 mb-1"><?= $escaper->escapeHtml(__('No Return Requests Found'))?></h3>
+                                <p class="text-sm text-gray-500">
+                                    <span x-show="search.length > 0"><?= $escaper->escapeHtml(__('Try adjusting your search terms'))?></span>
+                                    <span x-show="search.length === 0"><?= $escaper->escapeHtml(__('No return requests available'))?></span>
+                                </p>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </template>
+    <!-- Pagination -->
+    <div class="mt-6 flex justify-center items-center" x-show="totalPages > 1">
+        <div class="flex gap-2 text-sm">
+            <button @click="prevPage()"
+                    :class="{ 'cursor-not-allowed opacity-50': page === 1 || isLoading }"
+                    :disabled="page === 1 || isLoading"
+                    class="px-4 py-2 border rounded hover:bg-gray-50">
+                &laquo;
+            </button>
+
+            <template x-for="i in Array.from({length: Math.min(totalPages, 5)}, (_, index) => {
+                const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+                return start + index;
+            })" :key="i">
+                <button
+                    @click="goToPage(i)"
+                    :class="{ 'action primary add primary-btn text-white': page === i, 'opacity-50': isLoading }"
+                    :disabled="isLoading"
+                    class="px-4 py-2 border rounded">
+                    <span x-text="i"></span>
+                </button>
+            </template>
+            <button @click="nextPage()"
+                    :class="{ 'cursor-not-allowed opacity-50': page === totalPages || isLoading }"
+                    :disabled="page === totalPages || isLoading"
+                    class="px-4 py-2 border rounded hover:bg-gray-50">
+                &raquo;
+            </button>
+        </div>
+    </div>
+    <!-- Modal -->
+    <div class="relative" x-effect="document.body.classList.toggle('overflow-hidden', showModal)">
+        <div x-show="showModal" x-cloak class="fixed inset-0 bg-black/50 bg-opacity-25 transition-opacity flex items-center justify-center" id="rma-items-modal">
+            <div class="bg-white w-full max-w-5xl p-6 rounded-2xl shadow-2xl">
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800">
+                        <?= $escaper->escapeHtml(__('Returned Items')) ?></h2>
+                    <button @click="showModal = false" class="px-2 py-1 text-lg action primary add primary-btn">
+                        &times;
+                    </button>
+                </div>
+                <table class="min-w-full table border-collapse">
+                    <thead>
+                        <tr class="border-b border-gray-200 hidden md:table-row">
+                            <th><div class="flex justify-center items-center gap-1 p-2 text-center text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Name'))?></div></th>
+                            <th><div class="flex justify-center items-center gap-1 p-2 text-center text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('SKU'))?></div></th>
+                            <th><div class="flex justify-center items-center gap-1 p-2 text-center text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Price'))?></div></th>
+                            <th><div class="flex justify-center items-center gap-1 p-2 text-center text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Qty'))?></div></th>
+                            <th><div class="flex justify-center items-center gap-1 p-2 text-center text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Total'))?></div></th>
+                            <th><div class="flex justify-center items-center gap-1 p-2 text-center text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Reason'))?></div></th>
+                            <th><div class="flex justify-center items-center gap-1 p-2 text-center text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Resolution'))?></div></th>
+                            <th><div class="flex justify-center items-center gap-1 p-2 text-center text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Status'))?></div></th>
+                            <th><div class="flex justify-center items-center gap-1 p-2 text-center text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Images'))?></div></th>
+                            <th><div class="flex justify-center items-center gap-1 p-2 text-center text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Action'))?></div></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="item in selectedRma.items" :key="item.item_id">
+                            <tr class="border-b border-gray-200 pb-4 mb-4 block md:table-row last:border-b-0">
+                                <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2" x-text="item.name"></td>
+                                <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2" x-text="item.sku"></td>
+                                <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2" x-text="item.price.toFixed(2)"></td>
+                                <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2" x-text="item.qty"></td>
+                                <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2" x-text="(item.price * item.qty).toFixed(2)"></td>
+                                <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2" x-text="item.reason"></td>
+                                <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2" x-text="item.resolution"></td>
+                                <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2" x-text="item.status"></td>
+                                <td class="p-3 text-center">
+                                    <!-- Show dash when no images/files -->
+                                    <template x-if="!item.images || item.images.length === 0">
+                                        <span class="text-center text-gray-500">-</span>
+                                    </template>
+                                    <!-- Show files when they exist -->
+                                    <template x-if="item.images && item.images.length > 0">
+                                        <div class="flex flex-wrap gap-2 items-center">
+                                            <template x-for="url in item.images" :key="url">
+                                                <div class="relative">
+                                                    <!-- PDF Display -->
+                                                    <div x-show="isPdf(url)" class="w-32 h-40 border rounded overflow-hidden">
+                                                        <div class="absolute w-full h-full bg-transparent cursor-pointer" @click="previewFile(url)"></div>
+                                                        <embed :src="url" type="application/pdf" class="w-full h-full pointer-events-none" />
+                                                    </div>
+                                                    
+                                                    <!-- Other Files Display -->
+                                                    <a x-show="isOther(url)" :href="url" target="_blank" 
+                                                    class="flex items-center w-32 h-40 gap-2 px-3 py-2 rounded-lg border border-gray-300 bg-white shadow-sm hover:shadow-md hover:bg-gray-50 transition text-gray-800 max-w-[12rem] overflow-hidden" 
+                                                    title="Click to open file">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none"
+                                                            viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                        </svg>
+                                                        <span x-text="getFileName(url)" class="text-sm truncate"></span>
+                                                    </a>
+                                                    
+                                                    <!-- Image Display -->
+                                                    <img x-show="isImage(url)" :src="url" alt="File Image" 
+                                                        class="w-16 h-16 object-cover cursor-pointer border rounded hover:shadow-md transition" 
+                                                        @click="previewFile(url)"/>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </td>
+                                <td class="p-3">
+                                    <template x-if="(item.rma_status === 'Approved' || item.rma_status === 'Pending') && item.status !== 'Cancelled'">
+                                        <button class="action update secondary-btn flex-auto sm:flex-none" @click.prevent="cancelItem(item.item_id)">
+                                            <?= $escaper->escapeHtml(__('Cancel'))?>
+                                        </button>
+                                    </template>
+                                    <template x-if="!(item.rma_status === 'Approved' || item.rma_status === 'Pending') || item.status === 'Cancelled'">
+                                        <button class="action update secondary-btn flex-auto sm:flex-none opacity-50 cursor-not-allowed" disabled>
+                                            <?= $escaper->escapeHtml(__('Cancel'))?>
+                                        </button>
+                                    </template>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

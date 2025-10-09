@@ -1,0 +1,162 @@
+<?xml version="1.0"?>
+<listing xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+
+    <argument name="data" xsi:type="array">
+        <item name="js_config" xsi:type="array">
+            <item name="provider" xsi:type="string">rma_item_inspection_listing.rma_item_inspection_listing_data_source</item>
+            <item name="deps" xsi:type="array">
+                <item name="0" xsi:type="string">rma_item_inspection_listing.rma_item_inspection_listing_data_source</item>
+            </item>
+        </item>
+        <item name="spinner" xsi:type="string">rma_item_inspection_columns</item>
+    </argument>
+
+    <dataSource name="rma_item_inspection_listing_data_source" component="Magento_Ui/js/grid/provider">
+        <settings>
+            <storageConfig>
+                <param name="indexField" xsi:type="string">inspection_id</param>
+            </storageConfig>
+            <updateUrl path="mui/index/render"/>
+        </settings>
+
+        <dataProvider class="ViraXpress\Rma\Model\Request\ItemInspectionDataProvider" name="rma_item_inspection_listing_data_source">
+            <settings>
+                <primaryFieldName>inspection_id</primaryFieldName>
+                <requestFieldName>inspection_id</requestFieldName>
+            </settings>
+        </dataProvider>
+    </dataSource>
+
+    <listingToolbar name="listing_top">
+        <paging name="listing_paging"/>
+        <filters name="listing_filters"/>
+        <columnsControls name="columns_controls"/>
+        <bookmark name="bookmarks"/>
+    </listingToolbar>
+
+    <columns name="rma_item_inspection_columns">
+
+        <column name="inspection_id">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Inspection#</label>
+                <sorting>asc</sorting>
+            </settings>
+        </column>
+
+        <column name="rma_id">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">RMA#</label>
+            </settings>
+        </column>
+
+        <column name="item_id">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">RMA Item#</label>
+            </settings>
+        </column>
+        <column name="increment_id">
+            <settings>
+                <sortable>false</sortable>
+                <label translate="true">Order#</label>
+            </settings>
+        </column>
+        <column name="sku">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">SKU</label>
+            </settings>
+        </column>
+
+        <column name="product_id">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Product#</label>
+            </settings>
+        </column>
+
+        <column name="qty_received">
+            <settings>
+                <filter>numberRange</filter>
+                <label translate="true">Qty Received</label>
+            </settings>
+        </column>
+
+        <column name="condition">
+            <settings>
+                <filter>select</filter>
+                <dataType>select</dataType>
+                <options class="ViraXpress\Rma\Model\Config\Source\ItemCondition"/>
+                <label translate="true">Condition</label>
+            </settings>
+        </column>
+
+        <column name="test_results">
+            <settings>
+                <filter>select</filter>
+                <dataType>select</dataType>
+                <options class="ViraXpress\Rma\Model\Config\Source\InspectionTestResult"/>
+                <label translate="true">Test Results</label>
+            </settings>
+        </column>
+
+        <column name="restockable">
+            <settings>
+                <filter>select</filter>
+                <dataType>select</dataType>
+                <options>
+                    <option name="1" xsi:type="array">
+                        <item name="label" xsi:type="string" translate="true">Yes</item>
+                        <item name="value" xsi:type="string">Yes</item>
+                    </option>
+                    <option name="0" xsi:type="array">
+                        <item name="label" xsi:type="string" translate="true">No</item>
+                        <item name="value" xsi:type="string">No</item>
+                    </option>
+                </options>
+                <label translate="true">Restockable</label>
+            </settings>
+        </column>
+
+        <column name="inspection_status">
+            <settings>
+                <filter>select</filter>
+                <dataType>select</dataType>
+                <options class="ViraXpress\Rma\Model\Config\Source\InspectionStatus"/>
+                <label translate="true">Inspection Status</label>
+            </settings>
+        </column>
+
+        <column name="action_taken">
+            <settings>
+                <filter>select</filter>
+                <dataType>select</dataType>
+                <options class="ViraXpress\Rma\Model\Config\Source\InspectionActions"/>
+                <label translate="true">Action Taken</label>
+            </settings>
+        </column>
+
+        <column name="inspected_at">
+            <settings>
+                <filter>dateRange</filter>
+                <label translate="true">Inspected At</label>
+            </settings>
+        </column>
+
+        <actionsColumn name="actions" class="ViraXpress\Rma\Ui\Component\Listing\Column\InspectionActions">
+            <settings>
+                <indexField>inspection_id</indexField>
+                <resizeEnabled>false</resizeEnabled>
+                <resizeDefaultWidth>100</resizeDefaultWidth>
+            </settings>
+        </actionsColumn>
+    </columns>
+
+    <listingToolbar name="listing_bottom">
+        <paging name="listing_paging_bottom"/>
+    </listingToolbar>
+
+</listing>

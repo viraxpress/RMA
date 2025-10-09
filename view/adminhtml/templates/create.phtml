@@ -1,0 +1,426 @@
+<?php
+/**
+ * ViraXpress - https://www.viraxpress.com
+ *
+ * LICENSE AGREEMENT
+ *
+ * This file is part of the ViraXpress package and is licensed under the ViraXpress license agreement.
+ * You can view the full license at:
+ * https://www.viraxpress.com/license
+ *
+ * By utilizing this file, you agree to comply with the terms outlined in the ViraXpress license.
+ *
+ * DISCLAIMER
+ *
+ * Modifications to this file are discouraged to ensure seamless upgrades and compatibility with future releases.
+ *
+ * @category    ViraXpress
+ * @package     ViraXpress_Rma
+ * @author      ViraXpress
+ * @copyright   © 2024 ViraXpress (https://www.viraxpress.com/)
+ * @license     https://www.viraxpress.com/license
+ */
+/** @var \ViraXpress\Rma\Block\Adminhtml\Rma\CreateForm $block */
+
+$rmaStatuses=$block->getRmaStatus();
+
+$params = $block->getRequest()->getParams();
+$page = $params['page'] ?? 1;
+$limit = $params['limit'] ?? 20;
+$orders = $block->getOrders();
+$total = $orders->getSize();
+$totalPages = ceil($total / $limit);
+$sortField = $params['sort'] ?? '';
+$sortDir = $params['dir'] ?? 'ASC';
+
+?>
+<style>
+    .admin__fieldset-wrapper{
+        margin-left:100px;
+    }
+    hr{
+        margin-left:-100px;
+    }
+    .page-actions._fixed {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background-color: #f8f8f8;
+        padding: 16px 24px;
+        border-bottom: 1px solid #d6d6d6;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+
+    }
+    .error-tooltip {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background-color: #f44336;
+        color: white;
+        padding: 5px 10px;
+        font-size: 12px;
+        border-radius: 4px;
+        white-space: nowrap;
+        z-index: 10;
+        margin-top: 3px;
+    }
+</style>
+<div class="page-actions _fixed">
+    <div class="page-actions-inner">
+        <div class="page-actions-buttons">
+            <button type="button" class="action-default scalable back" id="rma-back">
+                <span><?= $escaper->escapeHtml(__('Back')) ?></span>
+            </button>
+            <button type="reset" class="action-default scalable reset" id="rma-reset">
+                <span><?= $escaper->escapeHtml(__('Reset')) ?></span>
+            </button>
+            <button type="button" class="action-primary scalable save" id="rma-save">
+                <span><?= $escaper->escapeHtml(__('Save')) ?></span>
+            </button>
+        </div>
+    </div>
+</div>
+<br><br>
+
+<div class="admin__fieldset-wrapper">
+    <div class="admin__fieldset">
+        <h2 style="margin-left:-100px;"><b><?= $escaper->escapeUrl(__('RMA Status')) ?></b></h2>
+
+        <div class="admin__field field">
+            <div class="control">
+                <select id="rma_status" name="rma_status" class="admin__control-select">
+                    <?php foreach ($rmaStatuses as $rmaStatus): ?>
+                            <option value="<?= $escaper->escapeUrl($rmaStatus) ?>">
+                                <?= $escaper->escapeUrl($rmaStatus) ?>
+                            </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+
+    </div>
+    <hr/>
+    <h2 style="margin-left:-100px;"><b><?= $escaper->escapeUrl(__('Order Information')) ?></b></h2>
+
+    <div class="admin__fieldset">
+        <div class="admin__field field">
+            <label class="label" for="increment_id">
+                <span><?= $escaper->escapeUrl(__('Order Increment ID')) ?></span>
+            </label>
+            <div class="control" >
+                <div style="display:inline-flex;position:relative;">
+                    <input type="text" name="increment_id" id="increment_id" class="admin__control-text" />
+                    <div class="error-tooltip" style="display: none;"></div>
+                </div>
+                
+                <button type="button" class="action-default" id="load-order">
+                    <?= $escaper->escapeUrl(__('Load')) ?>
+                </button>
+                <button type="button" class="action-default" id="select-order">
+                    <?= $escaper->escapeUrl(__('Select')) ?>
+                </button>
+            </div>
+        </div>
+
+        <div class="admin__field field field-customer_name" id="customer-info" style="display: none;">
+            <label class="label admin__field-label" for="request_customer_name">
+                <span>Customer Name</span>
+            </label>
+            <div class="admin__field-control control">
+                <div id="request_customer_name" class="control-value admin__field-value">
+                    <div id="request_customer_name_value">
+                        <a id="customer-name" onclick="this.target='blank'" target="blank"></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- <div class="admin__field field field-customer_email" id="customer-info-email" style="display: none;">
+            <label class="label admin__field-label" for="request_customer_email">
+                <span>Customer Email</span>
+            </label>
+            <div class="admin__field-control control">
+                <div id="request_customer_email" class="control-value admin__field-value">
+                    <div id="request_customer_email_value">
+                        <a id="customer-email" onclick="this.target='blank'" target="blank"></a>
+                    <div>
+                </div>
+            </div>
+        </div> -->
+    </div>
+    <div style="margin-left:-100px;">
+        <form id="return-form">
+            <div id="rma-items-grid" >
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="order-modal" style="display: none">
+    <div id="order-grid-container">
+        <form method="get" id="order-grid-form" action="<?= $escaper->escapeUrl($block->getAjaxUrl()) ?>">
+            <style>
+                    .admin__data-grid-toolbar {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 10px;
+                    }
+                    .admin__data-grid-controls-left {
+                        display: flex;
+                        gap: 10px;
+                        align-items: center;
+                    }
+                    .admin__data-grid-pager {
+                        display: flex;
+                        gap: 10px;
+                        align-items: center;
+                    }
+                    #searchFilterRow td {
+                        background-color: #f4f4f4;
+                    }
+                    .sortable-header {
+                        cursor: pointer;
+                        display: inline-block;
+                    }
+                    .data-grid-th {
+                        cursor: pointer;
+                    }
+            </style>
+        
+            <div class="admin__data-grid-toolbar">
+                <div class="admin__data-grid-controls-left">
+                    <button type="submit" class="action-default scalable action-primary">Search</button>
+                    <a href="<?= $escaper->escapeUrl($block->getUrl('*/*/*')) ?>" 
+                    class="action-default reset-filter">Reset Filter</a>
+                </div>
+                <div class="admin__data-grid-pager">
+                    <label>Per Page:</label>
+                    <select name="limit" class="admin__control-select">
+                        <?php foreach ([10, 20, 50] as $opt): ?>
+                            <option value="<?= $escaper->escapeHtmlAttr($opt) ?>"
+                             <?= $opt == $limit ? 'selected' : '' ?>>
+                                <?= $escaper->escapeHtml($opt) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div>
+                        <?php $preDisable = ($page > 1) ? '' : 'disabled'; ?>
+                        <a <?= $escaper->escapeHtmlAttr($preDisable) ?> class="action-default action-previous"
+                        href="<?= $escaper->escapeUrl($block->getUrl(
+                            '*/*/*',
+                            array_merge($params, ['page' => $page - 1])
+                        )) ?>">
+                        </a>
+
+                        <input type="text" class="admin__control-text" 
+                            value="<?= $escaper->escapeHtmlAttr($page) ?>" readonly />
+                        <?= $escaper->escapeHtml(__('of')) ?> <?= $escaper->escapeHtml($totalPages) ?>
+
+                        <?php $nextDisable = ($page < $totalPages) ? '' : 'disabled'; ?>
+                        <a <?= $escaper->escapeHtmlAttr($nextDisable) ?> class="action-default action-next"
+                        href="<?= $escaper->escapeUrl($block->getUrl(
+                            '*/*/*',
+                            array_merge($params, ['page' => $page + 1])
+                        )) ?>">
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="admin__data-grid-wrap">
+                <table class="data-grid">
+                    <thead>
+                            <tr class="data-grid-tr">
+                                <?php
+                                $columns = [
+                                    'entity_id' => 'Order ID',
+                                    'increment_id' => 'Increment ID',
+                                    'customer_email' => 'Customer Email',
+                                    'base_grand_total' => 'Grand Total (Base)',
+                                    'grand_total' => 'Grand Total (Purchased)',
+                                    'status'=>'Order Status'
+                                ];
+                                foreach ($columns as $field => $label):
+                                    $dir = ($sortField === $field && $sortDir === 'ASC') ? 'DESC' : 'ASC';
+                                    $url = $escaper->escapeUrl($block->getSortUrl($field, $params));
+                                    ?>
+                                <th class="data-grid-th"
+                                    data-sort-url="<?= $escaper->escapeUrl($url) ?>"
+                                    data-sort-field="<?= $escaper->escapeHtmlAttr($field) ?>">
+                                    <span class="sortable-header">
+                                    <?= $escaper->escapeHtml(__($label)) ?>
+                                    <?= $escaper->escapeHtml($block->getSortIcon($field, $sortField, $sortDir)) ?>
+                                    </span>
+                                </th>
+                            <?php endforeach; ?>
+                            </tr>
+                    </thead>
+                    <tbody>
+                            <tr class="data-grid-tr" id="searchFilterRow">
+                                <td class="data-grid-td">
+                                <input type="text" name="order_id"
+                                value="<?= $escaper->escapeHtmlAttr($params['order_id'] ?? '') ?>" /></td>
+                                <td class="data-grid-td">
+                                <input type="text" name="increment_id"
+                                value="<?= $escaper->escapeHtmlAttr($params['increment_id'] ?? '') ?>" /></td>
+                                <td class="data-grid-td">
+                                    <input type="text" name="email"
+                                    value="<?= $escaper->escapeHtmlAttr($params['email'] ?? '') ?>" />
+                                </td>
+                                <td class="data-grid-td"></td>
+                                <td class="data-grid-td"></td>
+                                <td class="data-grid-td"></td>
+                            </tr>
+                            <?php foreach ($orders as $order): ?>
+                                <tr class="data-grid-tr order-table-select-row"
+                                    data-order-id="<?= $escaper->escapeHtmlAttr($order->getIncrementId()) ?>">
+                                    <td class="data-grid-td">
+                                        <?= $escaper->escapeHtml($order->getId()) ?>
+                                    </td>
+                                    <td class="data-grid-td">
+                                        <?= $escaper->escapeHtml($order->getIncrementId()) ?>
+                                    </td>
+                                    <td class="data-grid-td">
+                                        <?= $escaper->escapeHtml($order->getCustomerEmail()) ?>
+                                    </td>
+                                    <td class="data-grid-td">
+                                        <?= /** noescape */ $order->formatPrice($order->getBaseGrandTotal()) ?>
+                                    </td>
+                                    <td class="data-grid-td">
+                                        <?= /** noescape */ $order->formatPrice($order->getGrandTotal()) ?>
+                                    </td>
+                                    <td class="data-grid-td">
+                                        <?= $escaper->escapeHtml($order->getStatusLabel()) ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    require(['jquery',
+            'mage/url',
+            'Magento_Ui/js/modal/alert',
+            'Magento_Ui/js/modal/modal',
+            'mage/loader'], 
+        function ($, urlBuilder,alert,modal) {
+
+        $('#rma-reset').on('click', function(){
+            location.reload();
+        })
+        $('#rma-back').on('click', function () {
+            var backUrl = "<?= $escaper->escapeUrl($block->getUrl('vx_rma/rma/index')) ?>";
+            window.location.href = backUrl;
+        });
+        $('#load-order').on('click', function () {
+            $('body').loader('show');
+            const $errorTooltip = $('.error-tooltip');
+            const IncrementId = $('#increment_id').val();
+            if (!IncrementId) {
+                setTimeout(() => {
+                    $errorTooltip.text("Increment id required").show();
+                    $('body').loader('hide');
+                }, 1000);
+                return;
+            };
+            
+            $.ajax({
+                url: '<?= $escaper->escapeUrl($block->getLoadUrl()) ?>',
+                type: 'POST',
+                data: { increment_id: IncrementId },
+                success: function (res) {
+                    if (res.success) {
+                        $errorTooltip.text("").hide();
+                        $('body').loader('hide');
+                        // alert({
+                        //         title: $.mage.__('Order Load Error'),
+                        //         content: $.mage.__(res.html)
+                        //     });
+                        $('#rma-items-grid').html(res.html);
+                        $('#customer-info').show();
+                        $('#customer-info-email').show();
+                        $('#customer-name').text(res.customer_name || '');
+                        $('#customer-email').text(res.customer_email || '');
+                    } else {
+                        alert({
+                                title: $.mage.__('Order Load Error'),
+                                content: $.mage.__(res.message)
+                            });
+                    }
+                }
+            });
+        });
+        $(document).on('click', '.order-table-select-row', function () {
+            let incrementId = $(this).data('order-id');
+            $('#increment_id').val(incrementId);
+            $('#rma-items-grid').html('');
+            $('#customer-info').hide();
+            $('#customer-name').text('');
+            orderModal.closeModal();
+        });
+
+        var orderModal = modal({
+            title: 'Return Orders',
+            type: 'slide',
+            modalClass: 'order-modal',
+            responsive: true,
+            buttons: [] 
+        }, $('#order-modal'));
+
+        $('#select-order').on('click',function(){
+            orderModal.openModal();
+        })
+
+        function reloadGrid(url, data = null, updateUrl = true) {
+            $.ajax({
+                url: url,
+                type: data ? 'POST' : 'GET',
+                data: data,
+                showLoader: true,
+                success: function (response) {
+                    const html = $(response).find('#order-grid-container').html();
+                    $('#order-grid-container').html(html);
+
+                    if (updateUrl) {
+                        // Update browser URL without page reload
+                        const newUrl = url + (data ? ('?' + data) : '');
+                        window.history.pushState({}, '', newUrl);
+                    }
+                },
+                error: function () {
+                    alert('Failed to reload the grid.');
+                }
+            });
+        }
+
+        $(document).on('submit', '#order-grid-form', function (e) {
+            e.preventDefault();
+            const form = $(this);
+            reloadGrid(form.attr('action'), form.serialize());
+        });
+
+        $(document).on('click', '.admin__data-grid-pager a', function (e) {
+            e.preventDefault();
+            reloadGrid($(this).attr('href'), null);
+        });
+
+        $(document).on('change', 'select[name="limit"]', function () {
+            $('#order-grid-form').submit();
+        });
+
+        $(document).on('click', '.reset-filter', function (e) {
+            e.preventDefault();
+            reloadGrid($(this).attr('href'), null);
+        });
+        $(document).on('click', '.data-grid-th', function () {
+            const url = $(this).data('sort-url');
+            if (url) {
+                reloadGrid(url);
+            }
+        });
+    });
+</script>

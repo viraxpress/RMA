@@ -1,0 +1,75 @@
+<!--@vars {
+    "var customer_name":"Customer Name",
+    "var parent_order_id":"Original Order Increment ID",
+    "var replacement_order_id":"Replacement Order Increment ID",
+    "var rma_id":"RMA ID",
+    "var store.getUrl('sales/order/view', {'order_id': parent_order.getId()})":"Original Order View URL",
+    "var store.getUrl('sales/order/view', {'order_id': replacement_order.getId()})":"Replacement Order View URL",
+    "var parent_order.getId()":"Original Order ID",
+    "var replacement_order.getId()":"Replacement Order ID",
+    "var parent_order_url":"Parent Order url",
+    "var replacement_order_url":"Replacement Order url"
+} @-->
+<!--@subject {{trans "Replacement Request Completed"}} @-->
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, sans-serif; background-color: #f7f7f7; padding: 20px;">
+    <tr>
+        <td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <tr>
+                    <td style="font-size: 18px; font-weight: bold; color: #333333;">
+                        Hello {{var customer_name}},
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding-top: 15px; font-size: 16px; color: #333;">
+                        Your replacement order has been created successfully.
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding-top: 20px; font-size: 15px; color: #333;">
+                        <table cellpadding="5" cellspacing="0" border="0" style="width: 100%; font-size: 15px;">
+                            <tr>
+                                <td><strong>Original Order:</strong></td>
+                                <td>#{{var parent_order_id}}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Replacement Order:</strong></td>
+                                <td>#{{var replacement_order_id}}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>RMA ID:</strong></td>
+                                <td>#{{var rma_id}}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding-top: 25px;">
+                        <a href="{{var parent_order_url}}" style="display: inline-block; background-color: #007bff; color: #ffffff; text-decoration: none; padding: 12px 20px; border-radius: 5px; font-weight: bold; font-size: 14px;">
+                            View Original Order #{{var parent_order_id}}
+                        </a>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding-top: 15px;">
+                        <a href="{{var replacement_order_url}}" style="display: inline-block; background-color: #28a745; color: #ffffff; text-decoration: none; padding: 12px 20px; border-radius: 5px; font-weight: bold; font-size: 14px;">
+                            View Replacement Order #{{var replacement_order_id}}
+                        </a>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding-top: 30px; font-size: 14px; color: #666;">
+                        Thank you for shopping with us.<br>
+                        If you have any questions, feel free to contact our support.
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>

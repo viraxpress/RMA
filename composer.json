@@ -1,0 +1,23 @@
+{
+    "name": "viraxpress/rma",
+    "description": "Rma for ViraXpress",
+    "type": "magento2-module",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "VX Frontend",
+            "email": "vira@viraxpress.com"
+        }
+    ],
+    "version": "3.0.0",
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "require": {
+        "php": "~8.1.0||~8.2.0||~8.3.0"
+    },
+    "autoload": {
+        "files": [
+            "registration.php"
+        ]
+    }
+}

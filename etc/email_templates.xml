@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<!-- /**
+ * ViraXpress - https://www.viraxpress.com
+ *
+ * LICENSE AGREEMENT
+ *
+ * This file is part of the ViraXpress package and is licensed under the ViraXpress license agreement.
+ * You can view the full license at:
+ * https://www.viraxpress.com/license
+ *
+ * By utilizing this file, you agree to comply with the terms outlined in the ViraXpress license.
+ *
+ * DISCLAIMER
+ *
+ * Modifications to this file are discouraged to ensure seamless upgrades and compatibility with future releases.
+ *
+ * @category    ViraXpress
+ * @package     ViraXpress_Rma
+ * @author      ViraXpress
+ * @copyright   © 2024 ViraXpress (https://www.viraxpress.com/)
+ * @license     https://www.viraxpress.com/license
+ */ -->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Mail/etc/email_templates.xsd">
+    <template id="rma_email_new_request_template" label="RMA Request Customer Email" file="rma_request_customer_email.html" type="html" module="ViraXpress_Rma" area="frontend"/>
+
+    <template id="rma_email_new_request_admin_template" label="RMA Request Admin Email" file="rma_request_admin_email.html" type="html" module="ViraXpress_Rma" area="frontend"/>
+
+    <template id="rma_email_status_update_template" label="RMA Status Update Email" file="rma_status_update_email.html" type="html" module="ViraXpress_Rma" area="frontend"/>
+
+    <template id="rma_email_refund_mail_template" label="RMA Refund Notification Email" file="rma_refund_email_template.html" type="html" module="ViraXpress_Rma" area="frontend"/>
+
+    <template id="rma_email_replacement_mail_template" label="RMA Replacement Notification Email" file="rma_replacement_email_template.html" type="html" module="ViraXpress_Rma" area="frontend"/>
+
+    <template id="rma_guest_otp_email_template" label="RMA Otp Verify Email" file="rma_guest_otp_email_template.html" type="html" module="ViraXpress_Rma" area="frontend"/>
+</config>

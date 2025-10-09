@@ -1,0 +1,525 @@
+<?php
+/**
+ * ViraXpress - https://www.viraxpress.com
+ *
+ * LICENSE AGREEMENT
+ *
+ * This file is part of the ViraXpress package and is licensed under the ViraXpress license agreement.
+ * You can view the full license at:
+ * https://www.viraxpress.com/license
+ *
+ * By utilizing this file, you agree to comply with the terms outlined in the ViraXpress license.
+ *
+ * DISCLAIMER
+ *
+ * Modifications to this file are discouraged to ensure seamless upgrades and compatibility with future releases.
+ *
+ * @category    ViraXpress
+ * @package     ViraXpress_Rma
+ * @author      ViraXpress
+ * @copyright   © 2024 ViraXpress (https://www.viraxpress.com/)
+ * @license     https://www.viraxpress.com/license
+ */
+// @phpcs:disable Generic.Files.LineLength
+/** @var \ViraXpress\Rma\Block\Adminhtml\Inspection\View $block */
+/** @var \Magento\Framework\Stdlib\DateTime\TimezoneInterface $timezone */
+$timezone = $block->getTimezone();
+
+$inspection = $block->getInspectionData();
+$rma = $block->getRmaData();
+$order = $block->getOrder();
+$rmaItems = $block->getRmaItemData();
+
+$orderItems = [];
+
+foreach ($order->getAllItems() as $orderItem) {
+    $orderItems[$orderItem->getProductId()] = $orderItem;
+}
+$itemStatusOptions = $block->getItemStatusOptions();
+$testResultList = $block->getTestResultList();
+$actionTakenList = $block->getActionTakenList();
+$inspectionStatusList = $block->getInspectionStatusList();
+$currentDate = date('Y-m-d');
+
+
+?>
+
+<style>
+    .inspection-grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-gap: 20px;
+        width: 80dvw;
+        position: relative;
+        margin-top: 20px;
+    }
+
+    .inspection-grid-item {
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 2px;
+    }
+
+    .inspection-grid-item.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .inspection-grid-label {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .admin__page-section-title {
+        font-size: 1.6rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+
+    .admin__page-section {
+        position: relative;
+        left: -250px;
+    }
+
+    .rma-items-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    .rma-items-table th,
+    .rma-items-table td {
+        border: 1px solid #ccc;
+        padding: 8px;
+    }
+
+    .rma-items-table th {
+        background-color: #f5f5f5;
+    }
+
+    /* select */
+    .custom-admin-select {
+        display: inline-block;
+        width: 100%;
+        max-width: 380px;
+        padding: 8px 12px;
+        font-size: 1.2rem;
+        color: #333;
+        background-color: #fff;
+        border: 1px solid #adadad;
+        border-radius: 4px;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D'10'%20height%3D'5'%20xmlns%3D'http%3A//www.w3.org/2000/svg'%3E%3Cpath%20d%3D'M0%200l5%205%205-5z'%20fill%3D'%23666'%20/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 10px 5px;
+    }
+    .custom-admin-input {
+        display: inline-block;
+        width: 80%;
+        padding: 8px 12px;
+        font-size: 1.2rem;
+        color: #333;
+        background-color: #fff;
+        border: 1px solid #adadad;
+        border-radius: 4px;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .custom-admin-select:focus,.custom-admin-input:focus {
+        border-color: #006bb4;
+        box-shadow: 0 0 0 2px rgba(0, 107, 180, 0.3);
+        outline: none;
+    }
+
+    .custom-admin-select:hover ,.custom-admin-input:focus{
+        border-color: #999;
+    }
+    .page-main-actions {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        background: #fff;
+        z-index: 100;
+        padding: 10px 20px;
+        border-top: 1px solid #ccc;
+        box-shadow: 0 -1px 5px rgba(0,0,0,0.1);
+    }
+    .custom-fixed-save-wrapper {
+        width: 80%;
+        position: sticky;
+        top: 10px;
+        right: 70px;
+        z-index: 1;
+        /* background: #f1f1f1;
+        padding: 10px 20px;
+        border: 1px solid #d6d6d6;
+        box-shadow: 0 0 6px rgba(0, 0, 0, 0.15); */
+        display:flex;
+        justify-content:end;
+    }
+    .page-actions._fixed {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background-color: #f8f8f8;
+            padding: 16px 24px;
+            border-bottom: 1px solid #d6d6d6;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            width: 150%;
+            margin-left:-400px;
+
+        }
+
+</style>
+<div class="page-actions _fixed">
+    <div class="page-actions-inner">
+        <div class="page-actions-buttons">
+            <button type="button" class="action-default scalable back" id="rma-back">
+                <span><?= $escaper->escapeHtml(__('Back')) ?></span>
+            </button>
+            <button type="button" class="action-primary scalable save" id="save-inspection" data-ui-id="save-button">
+                <span><?= $escaper->escapeHtml(__('Save')) ?></span>
+            </button>
+        </div>
+    </div>
+</div>
+<div class="admin__page-section">
+
+    <div class="admin__page-section-title"><?= $escaper->escapeHtml(__('Inspection Record')) ?></div>
+
+    <div class="inspection-grid-container"> 
+
+        <?php
+            $utcOrderCreatedDate = $order->getCreatedAt();
+            $DateOrderCreatedDate = $timezone->date(new \DateTime($utcOrderCreatedDate));
+            $OrderCreatedDate = $DateOrderCreatedDate   ->format('Y-m-d H:i:s');
+        ?>
+        <!-- Inspection Details -->
+        <div class="inspection-grid-item">
+            <div><span class="inspection-grid-label"><?= $escaper->escapeHtml(__('Inspection ID')) ?>:</span>
+            <?= $escaper->escapeHtml($inspection->getId()) ?></div>
+        </div>
+        <div class="inspection-grid-item">
+            <div><span class="inspection-grid-label"><?= $escaper->escapeHtml(__('RMA ID')) ?>:</span>
+            <?= $escaper->escapeHtml($inspection->getRmaId()) ?></div>
+        </div>
+        <div class="inspection-grid-item">
+            <div><span class="inspection-grid-label"><?= $escaper->escapeHtml(__('Item ID')) ?>:</span>
+            <?= $escaper->escapeHtml($inspection->getItemId()) ?></div>
+        </div>
+        <div class="inspection-grid-item">
+            <div><span class="inspection-grid-label"><?= $escaper->escapeHtml(__('SKU')) ?>:</span>
+            <?= $escaper->escapeHtml($inspection->getSku()) ?></div>
+        </div>
+        <div class="inspection-grid-item">
+            <div><span class="inspection-grid-label"><?= $escaper->escapeHtml(__('Qty Received')) ?>:</span>
+            <?= $escaper->escapeHtml($inspection->getQtyReceived()) ?></div>
+        </div>
+        <div class="inspection-grid-item">
+            <div><span class="inspection-grid-label"><?= $escaper->escapeHtml(__('Condition')) ?>:</span>
+            <?= $escaper->escapeHtml($inspection->getCondition()) ?></div>
+        </div>
+                <!-- Order Details -->
+        <div class="inspection-grid-item">
+            <div><span class="inspection-grid-label"><?= $escaper->escapeHtml(__('Order ID')) ?>:</span>
+            <?= $order ? $escaper->escapeHtml($order->getIncrementId()) : $escaper->escapeHtml(__('N/A')) ?></div>
+        </div>
+        <div class="inspection-grid-item">
+            <div><span class="inspection-grid-label"><?= $escaper->escapeHtml(__('Order Date')) ?>:</span>
+            <?=  $escaper->escapeHtml($OrderCreatedDate) ?></div>
+        </div>
+        <div class="inspection-grid-item">
+            <div><span class="inspection-grid-label"><?= $escaper->escapeHtml(__('Order Status')) ?>:</span>
+            <?= $order ? $escaper->escapeHtml($order->getStatus()) : $escaper->escapeHtml(__('N/A')) ?></div>
+        </div>
+        <div class="inspection-grid-item">
+            <div><span class="inspection-grid-label"><?= $escaper->escapeHtml(__('Order Total')) ?>:</span>
+            <?= $order ? $escaper->escapeHtml($block->formatPrice($order->getGrandTotal())) :
+                $escaper->escapeHtml(__('N/A')) ?></div>
+        </div>
+
+        <!-- RMA Item Table -->
+        <div class="inspection-grid-item full-width">
+            <?php if ($rmaItems && $rmaItems->getSize()): ?>
+                <div class="admin__page-section-title" style="margin-top:30px;">
+                    <?= $escaper->escapeHtml(__('RMA Item')) ?>
+                </div>
+                <table class="rma-items-table">
+                    <thead>
+                        <tr>
+                            <th><?= $escaper->escapeHtml(__('Item ID')) ?></th>
+                            <th><?= $escaper->escapeHtml(__('SKU')) ?></th>
+                            <th><?= $escaper->escapeHtml(__('Product Name')) ?></th>
+                            <th><?= $escaper->escapeHtml(__('Qty Requested')) ?></th>
+                            <th><?= $escaper->escapeHtml(__('Price')) ?></th>
+                            <th><?= $escaper->escapeHtml(__('Reason')) ?></th>
+                            <th><?= $escaper->escapeHtml(__('Resolution')) ?></th>
+                            <th><?= $escaper->escapeHtml(__('Status')) ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($rmaItems as $item):
+                            $productId = $item->getProductId();
+                            $orderItem = $orderItems[$productId] ?? null;
+                            $name = $orderItem ? $orderItem->getName() : 'N/A';
+                            $sku = $orderItem ? $orderItem->getSku() : 'N/A';
+                            $price=$orderItem ? $orderItem->getPrice() : 'N/A';
+                            ?>
+                            <tr>
+                                <td><?= $escaper->escapeHtml($item->getId()) ?></td>
+                                <td><?= $escaper->escapeHtml($sku) ?></td>
+                                <td><?= $escaper->escapeHtml($name) ?></td>
+                                <td><?= $escaper->escapeHtml($item->getQtyRequested()) ?></td>
+                                <td><?= /** noescape */ $order->formatPrice($price) ?></td>
+                                <td><?= $escaper->escapeHtml($item->getReason()) ?></td>
+                                <td><?= $escaper->escapeHtml($item->getResolution()) ?></td>
+                                <td>
+                                <select  name="item_status" class="custom-admin-select item_status"
+                                    data-item-id="<?= $escaper->escapeHtml($item->getId()) ?>"
+                                    data-rma-id="<?= $escaper->escapeHtml($rma->getId()) ?>">
+                                        <?php foreach ($itemStatusOptions as $status): ?>
+                                            <option value="<?= $escaper->escapeHtml($status) ?>" 
+                                                <?= $escaper->escapeHtml($item->getStatus())===
+                                                    $status ? 'selected' : '' ?>>
+                                                <?= $escaper->escapeHtml($status) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+        <div class="inspection-grid-item full-width">
+            <div>
+                <span class="inspection-grid-label"><?= $escaper->escapeHtml(__('Test Results')) ?>:</span>
+                <select name="test_results" class="custom-admin-select test_results"
+                    data-inspection-id="<?= $escaper->escapeHtml($inspection->getId()) ?>"
+                    data-rma-id="<?= $escaper->escapeHtml($rma->getId()) ?>">
+                    <?php foreach ($testResultList as $status): ?>
+                        <option value="<?= $escaper->escapeHtmlAttr($status) ?>" 
+                        <?= $escaper->escapeHtml($inspection->getTestResults())=== $status ? 'selected' : '' ?>>
+                            <?= $escaper->escapeHtml($status) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+            <div class="inspection-grid-item">
+                <div>
+                    <span class="inspection-grid-label"><?= $escaper->escapeHtml(__('Action Taken')) ?>:</span>
+                    <select name="action_taken" class="custom-admin-select action_taken"
+                        data-inspection-id="<?= $escaper->escapeHtml($inspection->getId()) ?>"
+                        data-rma-id="<?= $escaper->escapeHtml($rma->getId()) ?>">
+                        <?php foreach ($actionTakenList as $status): ?>
+                            <option value="<?= $escaper->escapeHtmlAttr($status) ?>"
+                            <?= $escaper->escapeHtml($inspection->getActionTaken()) === $status ? 'selected' : '' ?>>
+                                <?= $escaper->escapeHtml($status) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+
+            <div class="inspection-grid-item">
+                <div>
+                    <span class="inspection-grid-label"><?= $escaper->escapeHtml(__('Restock')) ?>:</span>
+                    <select name="restock"
+                            class="custom-admin-select restock"
+                            data-inspection-id="<?= $escaper->escapeHtmlAttr($inspection->getId()) ?>"
+                            data-rma-id="<?= $escaper->escapeHtmlAttr($rma->getId()) ?>">
+                        <?php
+                            $options = ["Select....", 'Yes', 'No'];
+                        foreach ($options as $value):
+                            ?>
+                            <option value="<?= $escaper->escapeHtmlAttr($value) ?>" 
+                            <?= $inspection->getRestockable() === $value ? 'selected' : '' ?>>
+                            <?= $escaper->escapeHtml($value) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+
+            <div class="inspection-grid-item full-width">
+                <div>
+                    <span class="inspection-grid-label"><?= $escaper->escapeHtml(__('Inspection Status')) ?>:</span>
+                    <select name="inspection_status" class="custom-admin-select inspection_status"
+                        data-inspection-id="<?= $escaper->escapeHtml($inspection->getId()) ?>"
+                        data-rma-id="<?= $escaper->escapeHtml($rma->getId()) ?>">
+                        <?php foreach ($inspectionStatusList as $status): ?>
+                            <option value="<?= $escaper->escapeHtmlAttr($status) ?>"
+                                <?= $escaper->escapeHtml($inspection->getInspectionStatus())===
+                                $status ? 'selected' : '' ?>>
+                                <?= $escaper->escapeHtml($status) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Inspected By (Text Input) -->
+            <div class="inspection-grid-item">
+                <div>
+                    <label for="inspected_by_<?= $escaper->escapeHtml($inspection->getId()) ?>" 
+                        class="inspection-grid-label">
+                    <?= $escaper->escapeHtml(__('Inspected By')) ?>:</label>
+                    <input type="text"
+                        id="inspected_by_<?= $escaper->escapeHtml($inspection->getId()) ?>"
+                        name="inspected_by"
+                        class="custom-admin-input"
+                        value="<?= $escaper->escapeHtml($inspection->getInspectedBy()) ?>"
+                        data-inspection-id="<?= $escaper->escapeHtml($inspection->getId()) ?>"
+                         />
+                </div>
+            </div>
+
+            <!-- Inspected At (Date Input) -->
+            <div class="inspection-grid-item">
+                <div>
+                    <label for="inspected_at_<?= $escaper->escapeHtml($inspection->getId()) ?>" 
+                            class="inspection-grid-label">
+                    <?= $escaper->escapeHtml(__('Inspected At')) ?>:</label>
+                    <input type="date"
+                        id="inspected_at_<?= $escaper->escapeHtml($inspection->getId()) ?>"
+                        name="inspected_at"
+                        class="custom-admin-input"
+                        value="<?= $escaper->escapeHtml($inspection->getInspectedAt()) ?
+                                $escaper->escapeHtml(date(
+                                    'Y-m-d',
+                                    strtotime($inspection->getInspectedAt())
+                                )) : $escaper->escapeHtml($currentDate) ?>"
+                        data-inspection-id="<?= $escaper->escapeHtml($inspection->getId()) ?>"
+                         />
+                </div>
+            </div>
+
+            <!-- Refurbished Notes (Textarea Input) -->
+            <div class="inspection-grid-item full-width">
+                <div>
+                    <label for="refurbished_notes_<?= $escaper->escapeHtml($rma->getId()) ?>" 
+                    class="inspection-grid-label">
+                    <?= $escaper->escapeHtml(__('Refurbished Notes')) ?>:</label>
+                    <textarea id="refurbished_notes_<?= $escaper->escapeHtml($rma->getId()) ?>"
+                            name="refurbished_notes"
+                            class="custom-admin-input"
+                            rows="4"
+                            ><?= $escaper->escapeHtml($inspection->getRefurbishedNotes()) ?></textarea>
+                </div>
+            </div>
+
+            <!-- Scrap Reason (Text Input) -->
+            <div class="inspection-grid-item full-width">
+                <div>
+                    <label for="scrap_reason_<?= $escaper->escapeHtml($rma->getId()) ?>" class="inspection-grid-label">
+                    <?= $escaper->escapeHtml(__('Scrap Reason')) ?>:</label>
+                    <input type="text"
+                        id="scrap_reason_<?= $escaper->escapeHtml($rma->getId()) ?>"
+                        name="scrap_reason"
+                        class="custom-admin-input"
+                        value="<?= $escaper->escapeHtml($inspection->getScrapReason()) ?>"
+                        data-rma-id="<?= $escaper->escapeHtml($rma->getId()) ?>" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    require(['jquery', 'Magento_Ui/js/modal/alert', 'Magento_Ui/js/modal/confirm'], function ($, alert, confirm) {
+        $('#rma-back').on('click', function () {
+            var backUrl = "<?= $escaper->escapeUrl($block->getUrl('vx_rma/config/index')) ?>";
+            window.location.href = backUrl;
+        }); 
+
+        function showLoaderAndReload() {
+            $('body').trigger('processStart');
+            setTimeout(function () {
+                location.reload();
+            }, 300);
+        }
+
+        function showAlert(title, content, callback) {
+            alert({
+                title: $.mage.__(title),
+                content: $.mage.__(content),
+                actions: {
+                    always: callback || function () {}
+                }
+            });
+        }
+
+        function updateRmaItemStatus(itemId, rmaId, status) {
+            $.ajax({
+                url: '<?= $escaper->escapeUrl($block->getUrl("vx_rma/rma/updateitemstatus")) ?>',
+                type: 'POST',
+                data: {
+                    item_id: itemId,
+                    rma_id: rmaId,
+                    status: status,
+                    form_key: window.FORM_KEY
+                },
+                success: function (response) {
+                    if (response.success) {
+                        showAlert('Success', 'Item status updated successfully.', showLoaderAndReload);
+                    } else {
+                        showAlert('Error', response.message);
+                    }
+                },
+                error: function () {
+                    showAlert('Error', 'Failed to update item status. Try again.');
+                }
+            });
+        }
+
+
+        $('.item_status').on('change', function () {
+            var itemId = $(this).data('item-id');
+            var rmaId = $(this).data('rma-id');
+            var status = $(this).val();
+                updateRmaItemStatus(itemId, rmaId, status);
+        });
+
+        $('#save-inspection').on('click', function () {
+            var data = {
+                inspection_id: $('[name="inspected_by"]').data('inspection-id'),
+                inspected_by: $('[name="inspected_by"]').val(),
+                inspected_at: $('[name="inspected_at"]').val(),
+                refurbished_notes: $('[name="refurbished_notes"]').val(),
+                scrap_reason: $('[name="scrap_reason"]').val(),
+                test_results: $('[name="test_results"]').val(),
+                action_taken: $('[name="action_taken"]').val(),
+                restock: $('[name="restock"]').val(),
+                inspection_status: $('[name="inspection_status"]').val()
+            };
+            $.ajax({
+                url: '<?= $escaper->escapeUrl($block->getUrl("vx_rma/iteminspection/updateinspection")) ?>',
+                type: 'POST',
+                data: data,
+                showLoader: true,
+                success: function (response) {
+                    if (response.success) {
+                        showAlert('Success', 'Inspection status updated successfully.', showLoaderAndReload);
+                    } else {
+                        showAlert('Error', response.message);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    alert('AJAX error: ' + error);
+                }
+            });
+        });
+
+
+    });
+</script>

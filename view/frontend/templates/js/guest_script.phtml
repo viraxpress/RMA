@@ -1,0 +1,323 @@
+<?php
+/** @var \ViraXpress\Rma\Block\GuestRma $block */
+$FormatedOrder =$block->getFormatedOrderItems();
+?>
+<script>
+    function returnOrdersComponent() {
+        const uploadCfg = <?= /**noescape */ $block->getUploadCfg() ?>;
+        const acceptAttr = (uploadCfg.allowedTypes || [])
+            .map(ext => '.' + ext.replace(/^\./, ''))
+            .join(',');
+
+        const bytes = (uploadCfg.maxSizeMb || 2) * 1024 * 1024;
+
+        return {
+            // ---------- state ----------
+            orders: <?= /** noescape */ $block->safeJson($block->getDetailedOrder()) ?>,
+            validatedItems: <?= /** noescape */ $block->safeJson($FormatedOrder['validatedItemIdsMap']) ?>,
+            openOrderId: null,
+            isModalOpen: false,
+            submitDisabled: false,
+            loading: false,
+            uploadedImagesMap: {},
+            selectedItems: [],
+            itemErrors: {},
+            acceptAttr,
+            bytes,
+            reasons: <?= /** noescape */ $block->safeJson($block->getReturnReasons()) ?>,
+            conditions: <?= /** noescape */ $block->safeJson($block->getItemConditions()) ?>,
+            resolutions: <?= /** noescape */ $block->safeJson($block->getReturnResolutions()) ?>,
+            uploadCfg,
+            ctx: <?= /** noescape */ $block->safeJson($block->getCtx()) ?>,
+            displayLoading:false,
+
+            hasAnyErrors() {
+                return Object.values(this.itemErrors).some(msg => msg);
+            },
+            // ---------- helpers ----------
+            toggle(id) {
+                this.openOrderId = (this.openOrderId === id) ? null : id;
+            },
+            formatDate(d) {
+                return new Date(d).toLocaleDateString();
+            },
+            // ---------- Bulk Select ------------
+            get allReturnableItemsSelected() {
+                if (!this.currentOrder) return false;
+                const validItems = this.currentOrder.items.filter(i => this.allowed(i));
+                return validItems.length > 0 &&
+                    validItems.every(i => this.selectedItems.includes(i.item_id));
+            },
+            get someReturnableItemsSelected() {
+                if (!this.currentOrder) return false;
+                const validItems = this.currentOrder.items.filter(i => this.allowed(i));
+                return validItems.some(i => this.selectedItems.includes(i.item_id)) &&
+                    !this.allReturnableItemsSelected;
+            },
+            toggleAllItems(event) {
+                if (!this.currentOrder) return;
+                const shouldSelect = !this.allReturnableItemsSelected && !this.someReturnableItemsSelected;
+                this.selectedItems = [];
+
+                // loop through items of the current order
+                this.currentOrder.items.forEach(item => {
+                    if (this.allowed(item)) {
+                        const checkbox = document.querySelector(`input[data-item-id="${item.item_id}"]`);
+
+                        // Only select the item if its checkbox is not disabled
+                        if (checkbox && !checkbox.disabled) {
+                            const id = item.item_id;
+                            if (shouldSelect) {
+                                this.selectedItems.push(id);
+                                this.itemErrors[id] = '';
+                            } else {
+                                delete this.itemErrors[id];
+                            }
+                        }
+                    }
+                });
+
+                // after DOM updates, populate qty = 1 for selected items
+                this.$nextTick(() => {
+                    this.selectedItems.forEach(id => {
+                        const qtyInput = document.querySelector(
+                            `input[name="return_qty[${id}"]`
+                        );
+                        if (qtyInput) qtyInput.value = 1;
+                    });
+                });
+
+                this.submitDisabled = this.hasAnyErrors() || this.selectedItems.length === 0;
+            },
+            // ---------- order state ----------
+            get currentOrder() {
+                return this.orders.find(o => o.entity_id == this.openOrderId) || null;
+            },
+            allowed(item) {
+                const list = this.validatedItems[this.openOrderId] || [];
+                return !item.parent_item_id && list.includes(item.item_id);
+            },
+            hasIncludedItems() {
+                if (!this.currentOrder) return false;
+                return this.currentOrder.items.some(i => this.allowed(i));
+            },
+
+            isItemReturnable(orderId, itemId) {
+                return (this.validatedItems[orderId] || []).includes(itemId);
+            },
+            hasReturnableItems(order) {
+                const allowed = this.validatedItems[order.entity_id] || [];
+                return order.items.some(i => allowed.includes(i.item_id) && i.qty_returnable > 0);
+            },
+
+            // ---------- modal controls ----------
+            openModal(orderId) {
+                if (!this.orders.some(o => o.entity_id == orderId)) return;
+                this.openOrderId = orderId;
+                this.isModalOpen = true;
+                this.submitDisabled = false;
+                this.selectedItems = [];
+            },
+            closeModal() {
+                this.isModalOpen = false;
+                this.uploadedImagesMap = {};
+                this.selectedItems = [];
+                this.itemErrors = {};
+                this.submitDisabled = true;
+            },
+
+            toggleItem(item) {
+                const idx = this.selectedItems.indexOf(item.item_id);
+
+                if (idx === -1) {
+                    this.selectedItems.push(item.item_id);
+                    this.itemErrors[item.item_id] = '';
+
+                    this.$nextTick(() => {
+                        const qtyInput = document.querySelector(`input[name="return_qty[${item.item_id}]"]`);
+                        if (qtyInput) qtyInput.value = 1;
+                    });
+                } else {
+                    this.selectedItems.splice(idx, 1);
+
+                    delete this.itemErrors[item.item_id];
+                }
+
+                this.submitDisabled = this.hasAnyErrors() || this.selectedItems.length === 0;
+            },
+
+            // ---------- quantity validation ----------
+            qtyError(itemId, input) {
+                const val = parseInt(input.value, 10);
+                const min = 1;
+                const max = parseInt(input.max);
+                const returnable = parseInt(input.dataset.returnable);
+                let msg = '';
+
+                if (!Number.isInteger(val)) msg = 'Quantity must be a whole number';
+                else if (val < min) msg = `Minimum quantity is ${min}`;
+                else if (val > returnable) msg = `Only ${returnable} item(s) available for return`;
+                else if (val > max) msg = `Cannot exceed ordered quantity (${max})`;
+
+                this.itemErrors[itemId] = msg;
+                this.submitDisabled = this.hasAnyErrors() || this.selectedItems.length === 0;
+
+                return msg;
+            },
+            // ---------- submission ----------
+            async submitReturnRequest() {
+                if (this.submitDisabled) return;
+                this.displayLoading=true;
+                const selectedCheckboxes = Array.from(document.querySelectorAll('.item-checkbox:checked'));
+                if (!selectedCheckboxes.length) {
+                    displayMessages([{text: 'Please select at least one item to return.' ,type: "error"}]);
+                    this.displayLoading=false;
+                    return;
+                }
+
+                const orderId = this.openOrderId;
+                const requestData = {
+                    order_id: orderId,
+                    status: 'Pending',
+                    customer_id: this.ctx.customerId,
+                    customer_email: this.ctx.customerEmail,
+                    customer_name: this.ctx.customerName
+                };
+
+                const items = selectedCheckboxes.map(cb => {
+                    const itemId = cb.dataset.itemId;
+                    const qty = parseInt(document.querySelector(`[name="return_qty[${itemId}]"]`).value, 10);
+                    const reason = document.querySelector(`[name="reason[${itemId}]"]`).value;
+                    const condition = document.querySelector(`[name="condition[${itemId}]"]`).value;
+                    const resolutions = document.querySelector(`[name="resolutions[${itemId}]"]`).value;
+                    const imagesInput = document.querySelector(`#uploader-${itemId} .file-name-input`);
+                    let uploadedImages = [];
+                    try {
+                        uploadedImages = JSON.parse(imagesInput.value || '[]');
+                    } catch (e) {}
+                    return {
+                        product_id: cb.dataset.productId,
+                        qty_requested: qty,
+                        qty_received: 0,
+                        reason,
+                        condition,
+                        resolutions,
+                        status: 'Pending',
+                        images: uploadedImages
+                    };
+                });
+                const finalData = {
+                    request: requestData,
+                    items
+                };
+                try {
+                    const res = await fetch(this.ctx.saveUrl, {
+                        method: 'POST',
+                        headers: {
+                        'Content-Type': 'application/json',
+                        'Accept':       'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-Magento-Form-Key': this.ctx.formKey
+                        },
+                        body: JSON.stringify(finalData)
+                    });
+                    const json = await res.json();
+                    if (json.success) {
+                        displayMessages([{text: json.message || 'Return request submitted successfully.'
+                                        ,type: "success"}]);
+                        this.closeModal();
+                        this.displayLoading=false;
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        this.displayLoading=false;
+                        displayMessages([{text: json.message || 'Unknown error' ,type: "error"}]);
+                    }
+                    } catch (err) {
+                        this.displayLoading=false;
+                        displayMessages([{text: err.message || 'Server error' ,type: "error"}]);
+                    } finally {
+                        this.displayLoading=false;
+                    }
+            },
+        };
+    }
+
+    function imageUploader(el, id, maxCount, maxSize, allowed) {
+        return {
+            files: [],
+            disabled: false,
+
+            get acceptAttr() {
+                return allowed.map(e => '.' + e.replace(/^\./, '')).join(',');
+            },
+            get jsonValue() {
+                return JSON.stringify(this.files);
+            },
+
+            handleFileChange(e) {
+                this.processFiles(e.target.files);
+                e.target.value = '';
+            },
+
+            dropFiles(e) {
+                this.processFiles(e.dataTransfer.files);
+            },
+
+            processFiles(fileList) {
+                if (this.disabled) return;
+
+                const incoming = Array.from(fileList);
+                const availableSlots = maxCount - this.files.length;
+
+                const validFiles = [];
+
+                for (const file of incoming) {
+                    if (validFiles.length >= availableSlots) break;
+
+                    const ext = file.name.split('.').pop().toLowerCase();
+                    if (!allowed.includes(ext)) {
+                        displayMessages([{text:`Allowed types: ${allowed.join(', ')}` ,type: "error"}]);
+                        continue;
+                    }
+
+                    if (file.size > maxSize) {
+                        displayMessages([{text:`Max size ${Math.round(maxSize / 1048576)} MB` ,type: "error"}]);
+                        continue;
+                    }
+
+                    validFiles.push(file);
+                }
+
+                validFiles.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                        const data = ev.target.result;
+                        if (this.files.some(f => f.data === data)) return;
+
+                        this.files.push({
+                            data,
+                            name: file.name,
+                            ext: file.name.split('.').pop().toLowerCase()
+                        });
+
+                        if (this.files.length >= maxCount) {
+                            this.disabled = true;
+                            el.querySelector('.upload-limit-msg')?.classList.remove('hidden');
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                });
+            },
+
+            removeFile(file) {
+                this.files = this.files.filter(f => f.data !== file.data);
+
+                if (this.files.length < maxCount) {
+                    this.disabled = false;
+                    el.querySelector('.upload-limit-msg')?.classList.add('hidden');
+                }
+            }
+        };
+    }
+
+</script>

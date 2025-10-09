@@ -1,0 +1,100 @@
+<!--@vars {
+    "var order_id": "Order Increment ID",
+    "var customer_name": "Customer Name",
+    "var customer_email": "Customer Email Address",
+    "var status": "RMA Status",
+    "var items": "List of RMA Items",
+    "var item.name": "List of RMA Items",
+    "var item.qty_requested": "List of RMA Items",
+    "var item.reason": "List of RMA Items",
+    "var item.condition": "List of RMA Items",
+    "var item.resolutions": "List of RMA Items"
+} @-->
+<!--@subject {{trans "New RMA Request"}} @-->
+
+<!-- WRAPPER (100 % width, soft‑grey background) -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, sans-serif; background:#f4f4f4; padding:24px;">
+  <tr>
+    <td align="center">
+
+      <!-- CARD (max‑width 600 px, white background) -->
+      <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; width:100%; background:#ffffff; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.08); overflow:hidden;">
+        <tr>
+          <td style="padding:32px 32px 16px 32px;">
+
+            <!-- HEADER -->
+            <h2 style="margin:0 0 8px 0; font-size:22px; color:#333333; line-height:1.3;">
+              Hello Admin,
+            </h2>
+            <p style="margin:0 0 24px 0; font-size:15px; color:#555555;">
+              A new RMA request has been submitted. Below are the details.
+            </p>
+
+            <!-- ORDER + CUSTOMER SUMMARY -->
+            <table cellpadding="0" cellspacing="0" border="0" style="width:100%; font-size:15px; color:#333333; margin-bottom:24px;">
+              <tr>
+                <td style="padding:6px 0;"><strong>Order ID:</strong></td>
+                <td style="padding:6px 0;">#{{var order_id}}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0;"><strong>Customer:</strong></td>
+                <td style="padding:6px 0;">{{var customer_name}}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0;"><strong>Email:</strong></td>
+                <td style="padding:6px 0;">{{var customer_email}}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0;"><strong>Status:</strong></td>
+                <td style="padding:6px 0;">
+                  <span style="background:#007bff; color:#ffffff; padding:3px 10px; border-radius:4px; font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">
+                    {{var status}}
+                  </span>
+                </td>
+              </tr>
+            </table>
+
+            <!-- ITEMS TABLE -->
+            <p style="margin:0 0 12px 0; font-size:16px; font-weight:bold; color:#333333;">
+              Items in the RMA:
+            </p>
+
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse; font-size:14px;">
+              <thead>
+                <tr style="background:#f0f0f0;">
+                  <th align="left" style="padding:10px; border:1px solid #e1e1e1;">Product Name</th>
+                  <th align="left" style="padding:10px; border:1px solid #e1e1e1;">Qty Requested</th>
+                  <th align="left" style="padding:10px; border:1px solid #e1e1e1;">Reason</th>
+                  <th align="left" style="padding:10px; border:1px solid #e1e1e1;">Condition</th>
+                  <th align="left" style="padding:10px; border:1px solid #e1e1e1;">Resolution</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{depend items}}
+                  {{for item in items}}
+                    <tr>
+                      <td style="padding:10px; border:1px solid #e1e1e1;">{{var item.name}}</td>
+                      <td style="padding:10px; border:1px solid #e1e1e1;">{{var item.qty_requested}}</td>
+                      <td style="padding:10px; border:1px solid #e1e1e1;">{{var item.reason}}</td>
+                      <td style="padding:10px; border:1px solid #e1e1e1;">{{var item.condition}}</td>
+                      <td style="padding:10px; border:1px solid #e1e1e1;">{{var item.resolutions}}</td>
+                    </tr>
+                  {{/for}}
+                {{/depend}}
+              </tbody>
+            </table>
+
+            <!-- FOOTER NOTE -->
+            <p style="margin:24px 0 0 0; font-size:14px; color:#666666;">
+              Please log in to the admin panel to review and process this RMA.
+            </p>
+
+          </td>
+        </tr>
+      </table>
+      <!-- /CARD -->
+
+    </td>
+  </tr>
+</table>
+<!-- /WRAPPER -->

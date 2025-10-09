@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        layout="1column"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <!-- Remove sidebars and blocks -->
+        <referenceContainer name="sidebar.main" remove="true"/>
+        <referenceContainer name="sidebar.additional" remove="true"/>
+        <referenceBlock name="catalog.compare.sidebar" remove="true" />
+        <referenceBlock name="wishlist_sidebar" remove="true" />
+        <!-- Custom full-width RMA content -->
+        <referenceContainer name="content">
+            <block class="ViraXpress\Rma\Block\GuestRma" name="rma_view" template="ViraXpress_Rma::guest.phtml" cacheable="false"/>
+        </referenceContainer>
+        <referenceContainer name="before.body.end">
+            <block class="ViraXpress\Rma\Block\GuestRma" name="guest_script" template="ViraXpress_Rma::js/guest_script.phtml"/>
+        </referenceContainer>
+    </body>
+</page>

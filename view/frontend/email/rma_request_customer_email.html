@@ -1,0 +1,88 @@
+<!--@vars {
+    "var order_id": "Order Increment ID",
+    "var customer_name": "Customer Name",
+    "var status": "RMA Status",
+    "var items": "List of RMA Items",
+    "var item.name": "List of RMA Items",
+    "var item.qty_requested": "List of RMA Items",
+    "var item.reason": "List of RMA Items",
+    "var item.condition": "List of RMA Items",
+    "var item.resolutions": "List of RMA Items"
+} @-->
+<!--@subject {{trans "New RMA Request"}} @-->
+
+<!-- Wrapper -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 24px;">
+  <tr>
+    <td align="center">
+
+      <!-- Card -->
+      <table width="600" cellpadding="0" cellspacing="0" border="0" style="background: #ffffff; border-radius: 8px; padding: 32px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); max-width: 600px; width: 100%;">
+        <tr>
+          <td>
+
+            <!-- Header -->
+            <h2 style="margin: 0 0 16px 0; font-size: 22px; color: #333333;">Hello {{var customer_name}},</h2>
+
+            <!-- Intro Text -->
+            <p style="font-size: 15px; color: #555555; line-height: 1.6;">
+              Your return request (RMA) for <strong>Order #{{var order_id}}</strong> has been successfully received.
+            </p>
+
+            <!-- Status -->
+            <p style="font-size: 15px; color: #333333; margin: 16px 0;">
+              <strong>Status:</strong>
+              <span style="color: #007bff;">{{var status}}</span>
+            </p>
+
+            <!-- Table Title -->
+            <p style="font-size: 15px; color: #555555; margin-top: 24px; margin-bottom: 8px;">
+              The following items are included in your RMA request:
+            </p>
+
+            <!-- Items Table -->
+            <table cellpadding="10" cellspacing="0" width="100%" style="border-collapse: collapse; font-size: 14px;">
+              <thead>
+                <tr style="background-color: #f0f0f0; color: #333;">
+                  <th align="left" style="border-bottom: 1px solid #ddd;">Product Name</th>
+                  <th align="left" style="border-bottom: 1px solid #ddd;">Qty Requested</th>
+                  <th align="left" style="border-bottom: 1px solid #ddd;">Reason</th>
+                  <th align="left" style="border-bottom: 1px solid #ddd;">Condition</th>
+                  <th align="left" style="border-bottom: 1px solid #ddd;">Resolution</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{depend items}}
+                  {{for item in items}}
+                    <tr style="border-bottom: 1px solid #eee;">
+                      <td style="padding: 8px 6px;">{{var item.name}}</td>
+                      <td style="padding: 8px 6px;">{{var item.qty_requested}}</td>
+                      <td style="padding: 8px 6px;">{{var item.reason}}</td>
+                      <td style="padding: 8px 6px;">{{var item.condition}}</td>
+                      <td style="padding: 8px 6px;">{{var item.resolutions}}</td>
+                    </tr>
+                  {{/for}}
+                {{/depend}}
+              </tbody>
+            </table>
+
+            <!-- Footer Text -->
+            <p style="font-size: 14px; color: #666666; line-height: 1.6; margin-top: 32px;">
+              Our team will review your request and get back to you shortly. If you have any questions in the meantime, feel free to reach out to our support team.
+            </p>
+
+            <!-- Signature -->
+            <p style="font-size: 14px; color: #333333; margin-top: 24px;">
+              Thank you,<br>
+              <strong>Customer Support</strong>
+            </p>
+
+          </td>
+        </tr>
+      </table>
+      <!-- /Card -->
+
+    </td>
+  </tr>
+</table>
+<!-- /Wrapper -->

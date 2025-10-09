@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" layout="1column" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceBlock name="customer_account_navigation">
+            <block class="Magento\Customer\Block\Account\SortLinkInterface" name="customer-account-navigation-return" ifconfig="rma/general/enable">
+                <arguments>
+                    <argument name="label" translate="true" xsi:type="string">Return Request</argument>
+                    <argument name="path" xsi:type="string">vx_rma/rmareturn/index</argument>
+                </arguments>
+            </block>
+            <block class="Magento\Customer\Block\Account\SortLinkInterface" name="customer-account-navigation-rma" ifconfig="rma/general/enable">
+                <arguments>
+                    <argument name="label" translate="true" xsi:type="string">Manage Returns</argument>
+                    <argument name="path" xsi:type="string">vx_rma/rma/index</argument>
+                </arguments>
+            </block>
+        </referenceBlock>
+
+    </body>
+</page>

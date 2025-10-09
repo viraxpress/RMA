@@ -1,0 +1,114 @@
+<?xml version="1.0"?>
+    <listing    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+                xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+        <argument name="data" xsi:type="array">
+            <item name="js_config" xsi:type="array">
+                <item name="provider" xsi:type="string">
+                    vx_rma_rma_listing.vx_rma_rma_listing_data_source
+                </item>
+            </item>
+            <item name="config" xsi:type="array">
+                <item name="context" xsi:type="array">
+                    <item name="current_customer_id" xsi:type="string">%id%</item>
+                </item>
+            </item>
+        </argument>
+
+        <settings>
+            <spinner>vx_rma_rma_columns</spinner>
+            <deps>
+                <dep>vx_rma_rma_listing.vx_rma_rma_listing_data_source</dep>
+            </deps>
+            <buttons>
+                <button name="add">
+                    <url path="vx_rma/rma/create"/>
+                    <class>primary</class>
+                    <label translate="true">Add New RMA</label>
+                </button>
+            </buttons>
+        </settings>
+
+        <dataSource name="vx_rma_rma_listing_data_source" component="Magento_Ui/js/grid/provider">
+            <settings>
+                <storageConfig>
+                    <param name="indexField" xsi:type="string">rma_id</param>
+                </storageConfig>
+                <updateUrl path="mui/index/render"/>
+            </settings>
+            <aclResource>ViraXpress_Rma::rma</aclResource>
+            <dataProvider name="vx_rma_rma_listing_data_source" class="ViraXpress\Rma\Model\Request\DataProvider">
+                <settings>
+                    <requestFieldName>rma_id</requestFieldName>
+                    <primaryFieldName>rma_id</primaryFieldName>
+                </settings>
+
+            </dataProvider>
+        </dataSource>
+
+        <listingToolbar name="listing_top">
+            <settings>
+                <sticky>true</sticky>
+            </settings>
+
+            <bookmark name="bookmarks"/>
+            <columnsControls name="columns_controls"/>
+            <filters name="listing_filters"/>
+            <paging name="listing_paging"/>
+        </listingToolbar>
+
+        <columns name="vx_rma_rma_columns">
+            <column name="rma_id">
+                <settings>
+                    <filter>text</filter>
+                    <sorting>asc</sorting>
+                    <label translate="true">RMA#</label>
+                </settings>
+            </column>
+            <column name="increment_id">
+                <settings>
+                    <sortable>false</sortable>
+                    <label translate="true">Order#</label>
+                </settings>
+            </column>
+
+            <column name="customer_name">
+                <settings>
+                    <sortable>false</sortable>
+                    <label translate="true">Customer Name</label>
+                </settings>
+            </column>
+            <column name="status">
+                <settings>
+                    <filter>select</filter>
+                    <sorting>asc</sorting>
+                    <dataType>select</dataType>
+                    <options class="ViraXpress\Rma\Model\Config\Source\RmaStatus"/>
+                    <label translate="true">Status</label>
+                </settings>
+            </column>
+            <column name="created_at" class="Magento\Ui\Component\Listing\Columns\Date">
+                <settings>
+                    <filter>dateRange</filter>
+                    <sorting>asc</sorting>
+                    <dataType>date</dataType>
+                    <label translate="true">Created At</label>
+                </settings>
+            </column>
+
+            <column name="updated_at" class="Magento\Ui\Component\Listing\Columns\Date">
+                <settings>
+                    <filter>dateRange</filter>
+                    <sorting>asc</sorting>
+                    <dataType>date</dataType>
+                    <label translate="true">Updated At</label>
+                </settings>
+            </column>
+
+            <actionsColumn name="actions" class="ViraXpress\Rma\Ui\Component\Listing\Column\RmaActions">
+                <settings>
+                    <indexField>rma_id</indexField>
+                </settings>
+            </actionsColumn>
+
+        </columns>
+    </listing>

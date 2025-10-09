@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceBlock name="customer_form">
+            <block class="ViraXpress\Rma\Block\Adminhtml\Customer\Edit\ReturnTab" name="rma_customer_returns_tab" group="detailed_info">
+                <arguments>
+                    <argument name="label" translate="true" xsi:type="string">Return Requests</argument>
+                    <argument name="title" translate="true" xsi:type="string">Return Requests</argument>
+                </arguments>
+            </block>
+        </referenceBlock>
+    </body>
+</page>
+

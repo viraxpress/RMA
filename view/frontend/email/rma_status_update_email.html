@@ -1,0 +1,53 @@
+<!--@vars {
+    "var customer_name":"Customer Name",
+    "var order_id":"Order Increment ID",
+    "var status":"RMA Status"
+} @-->
+<!--@subject {{trans "RMA Request Update"}} @-->
+
+<!-- Wrapper -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, sans-serif; background-color: #f6f6f6; padding: 24px;">
+  <tr>
+    <td align="center">
+
+      <!-- Card -->
+      <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 8px; padding: 32px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); max-width: 600px; width: 100%;">
+        <tr>
+          <td>
+            <!-- Header -->
+            <h2 style="margin: 0 0 20px 0; font-size: 22px; color: #333333;">Return Request Update</h2>
+
+            <!-- Greeting -->
+            <p style="font-size: 15px; color: #555555; line-height: 1.6;">
+              Hello <strong>{{var customer_name}}</strong>,
+            </p>
+
+            <!-- Main Message -->
+            <p style="font-size: 15px; color: #555555; line-height: 1.6;">
+              Your return request (RMA) for <strong>Order #{{var order_id}}</strong> has been updated.
+            </p>
+
+            <!-- Status -->
+            <p style="font-size: 16px; color: #333333; margin: 16px 0;">
+              <strong>New Status:</strong> <span style="color: #007bff;">{{var status}}</span>
+            </p>
+
+            <!-- Footer -->
+            <p style="font-size: 14px; color: #666666; line-height: 1.6;">
+              If you have any questions, feel free to contact our support team.
+            </p>
+
+            <p style="font-size: 14px; color: #333333; margin-top: 32px;">
+              Thank you,<br>
+              <strong>Customer Support Team</strong>
+            </p>
+
+          </td>
+        </tr>
+      </table>
+      <!-- /Card -->
+
+    </td>
+  </tr>
+</table>
+<!-- /Wrapper -->

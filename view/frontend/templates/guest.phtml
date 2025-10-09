@@ -1,0 +1,392 @@
+
+<?php
+/** @var \ViraXpress\Rma\Block\GuestRma $block */
+ // @phpcs:disable Generic.Files.LineLength
+ $order =$block->getOrder();
+?>
+<?php if (!$block->isRmaEnabled()): ?>
+    <p><?= $escaper->escapeHtml(__('RMA functionality is currently disabled.')) ?></p>
+<?php else:?>
+<div class="rma-order-details p-6">
+    <?php if ($order): ?>
+        <div class="flex flex-col  md:flex-row gap-6">
+            <div class="md:w-1/4">
+                <div class="w-full shadow-sm border border-gray-100 rounded-lg p-4 bg-white mb-6">
+                    <h2 class="text-lg font-bold text-primary mb-6 border-b border-gray-200 pb-2">
+                        <?= $escaper->escapeHtml(__('Order Details:')) ?>
+                    </h2>
+                    <form class="space-y-5 text-gray-800 ">
+                        <!-- Order ID -->
+                        <div>
+                            <label for="order_id" class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">
+                                <?= $escaper->escapeHtml(__('Order ID')) ?>
+                            </label>
+                            <input type="text"
+                                class="w-full border border-gray-300 text-sm rounded-xl px-3 py-2 bg-gray-50 text-gray-900 font-medium focus:outline-none focus:ring-2"
+                                disabled
+                                id="order_id"
+                                value="<?= $escaper->escapeHtml($block->getParam('order_id')) ?>">
+                        </div>
+                        <!-- Last Name -->
+                        <div>
+                            <label for="lastname" class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">
+                                <?= $escaper->escapeHtml(__('Last Name')) ?>
+                            </label>
+                            <input type="text"
+                                class="w-full border border-gray-300 text-sm rounded-xl px-3 py-2 bg-gray-50 text-gray-900 font-medium focus:outline-none focus:ring-2"
+                                disabled
+                                id="lastname"
+                                value="<?= $escaper->escapeHtml($block->getParam('lastname')) ?>">
+                        </div>
+                        <!-- Email -->
+                        <div>
+                            <label for="email" class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">
+                                <?= $escaper->escapeHtml(__('Email')) ?>
+                            </label>
+                            <input type="text"
+                                class="w-full border border-gray-300 text-sm rounded-xl px-3 py-2 bg-gray-50 text-gray-900 font-medium focus:outline-none focus:ring-2"
+                                disabled
+                                id="email"
+                                value="<?= $escaper->escapeHtml($block->getParam('email')) ?>">
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="md:w-2/3">
+            <div x-data='returnOrdersComponent()' class="space-y-4">
+                <!-- ORDERS TABLE -->
+                <template x-if="orders.length > 0 && orders.some(order => hasReturnableItems(order))">
+                    <div class="w-full shadow-sm border border-gray-100 rounded-lg p-4 bg-white mb-6">
+                        <table class="min-w-full border-collapse">
+                            <thead>
+                                <tr class="border-b border-gray-200 hidden md:table-row">
+                                    <th class="col id w-[115px]">
+                                        <div class="p-2 text-left text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Order #'))?></div>
+                                    </th>
+                                    <th class="col id w-[115px]">
+                                        <div class="p-2 text-left text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Order Date'))?></div>
+                                    </th>
+                                    <th class="col id w-[115px]">
+                                        <div class="p-2 text-left text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Order Status'))?></div>
+                                    </th>
+                                    <th class="col id w-[115px]">
+                                        <div class="p-2 text-left text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Return Window'))?></div>
+                                    </th>
+                                    <th class="col id w-[115px]">
+                                        <div class="p-2 text-left text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Total'))?></div>
+                                    </th>
+                                    <th class="col id w-[115px]">
+                                        <div class="p-2 text-left text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Action'))?></div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="order in orders" :key="order.entity_id">
+                                    <template x-if="hasReturnableItems(order)">
+                                        <tr class="border-b border-gray-200 pb-4 mb-4 block md:table-row last:border-b-0">
+                                            <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2">
+                                                <div class="flex items-center gap-2">
+                                                    <span x-text="order.increment_id"></span>
+                                                </div>
+                                            </td>
+                                            <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2">
+                                                <span x-text="order.created_at"></span>
+                                            </td>
+                                            <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2">
+                                                <span  x-text="order.status"></span>
+                                            </td>
+                                            <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2">
+                                                <template x-if="order.days_remaining > 0">
+                                                    <span class="text-gray-600" x-text="'Return window: ' + order.days_remaining + ' days'"></span>
+                                                </template>
+                                                <template x-if="order.days_remaining <= 0">
+                                                    <span class="text-red-600"><?= $escaper->escapeHtml(__('Expired')) ?></span>
+                                                </template>
+                                            </td>
+                                            <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2" x-html="order.grand_total"></td>
+                                            <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2">
+                                                <template x-if="order.days_remaining > 0 && hasReturnableItems(order)">
+                                                    <button class="action primary add primary-btn"
+                                                            @click.stop="openModal(order.entity_id)">
+                                                        <?= $escaper->escapeHtml(__('Return')) ?>
+                                                    </button>
+                                                </template>
+                                                <template x-if="order.days_remaining <= 0">
+                                                    <span class="text-red-600 text-sm"><?= $escaper->escapeHtml(__('Closed')) ?></span>
+                                                </template>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+                <!-- NO ORDERS MESSAGE -->
+                <template x-if="orders.length === 0 || !orders.some(order => hasReturnableItems(order))">
+                    <div class="overflow-x-auto rounded shadow border border-gray-300">
+                        <table class="w-full table-auto text-left">
+                            <thead>
+                                <tr>
+                                    <th colspan="6" class="px-4 py-8 text-center">
+                                        <div class="text-gray-500">
+                                            <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                            <h3 class="text-lg font-medium text-gray-900 mb-1"><?= $escaper->escapeHtml(__('No Returnable Orders Found'))?></h3>
+                                            <p class="text-sm text-gray-500">
+                                                <span x-show="search.length === 0"><?= $escaper->escapeHtml(__('You have no returnable orders at this time.'))?></span>
+                                            </p>
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </template>
+                <!-- MODAL -->
+                <div class="relative" x-effect="document.body.classList.toggle('overflow-hidden', isModalOpen)">
+                    <div x-show="isModalOpen" x-cloak x-transition class="fixed inset-0 bg-black/50 bg-opacity-25 transition-opacity flex items-center justify-center">
+                        <div @click.outside="closeModal()" class="bg-white w-full max-w-3xl p-6 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+                            <!-- Modal Header -->
+                            <div class="flex justify-between items-center border-b pb-4 mb-4">
+                                <h2 class="text-xl font-semibold text-gray-800">
+                                    <?= $escaper->escapeHtml(__('Return Items')) ?></h2>
+                                <button @click="closeModal()" class="px-2 py-1 text-lg action primary add primary-btn">
+                                    &times;
+                                </button>
+                            </div>
+                            <!-- Modal Body -->
+                            <template x-if="currentOrder">
+                                <div>
+                                    <!-- Order Info -->
+                                    <div class="mb-5 bg-gray-50 p-2 rounded-lg">
+                                        <div class="text-xl font-semibold tracking-wide" x-text="`Order #${currentOrder.increment_id}`"></div>
+                                        <div class="text-lg text-gray-600 mt-1 space-x-6">
+                                            <span>
+                                                <?= $escaper->escapeHtml(__('Date:'))?>
+                                                <span class="font-semibold" x-text="currentOrder.created_at"></span>
+                                            </span>
+                                            <span>
+                                                <?= $escaper->escapeHtml(__('Total:'))?>
+                                                <span class="font-semibold" x-html="currentOrder.grand_total"></span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <!-- Bulk Select -->
+                                    <div class="flex items-center mb-4">
+                                        <input type="checkbox"
+                                            id="selectAll"
+                                            x-ref="selectAll"
+                                            class="mr-2 checkbox rounded h-5 w-5 cursor-pointer border-gray-300 text-primary focus:ring-primary"
+                                            @change="toggleAllItems($event)"
+                                            :checked="allReturnableItemsSelected"
+                                            x-effect="$refs.selectAll.indeterminate = someReturnableItemsSelected">
+                                        <label for="selectAll" class="text-md font-medium text-gray-800">
+                                            <?= $escaper->escapeHtml(__('Select All Returnable Items'))?>
+                                        </label>
+                                    </div>
+
+                                    <!-- Items -->
+                                    <template x-for="item in currentOrder.items" :key="item.item_id">
+                                        <template x-if="allowed(item)">
+                                            <div class="border rounded-lg p-5 mb-6 shadow-sm">
+                                                <!-- Warning -->
+                                                <h4 class="text-base text-red-600 font-medium mb-2"
+                                                    x-show="item.qty_returnable === 0">
+                                                    <?= $escaper->escapeHtml(__("Can't create Return/Replacement for this item")) ?>
+                                                </h4>
+                                                <!-- Checkbox + Info -->
+                                                <div class="flex gap-4 items-start">
+                                                    <input type="checkbox"
+                                                        class="item-checkbox checkbox rounded mt-1 h-5 w-5 cursor-pointer border-gray-300 text-primary focus:ring-primary"
+                                                        :checked="selectedItems.includes(item.item_id)"
+                                                        :disabled="item.qty_returnable === 0"
+                                                        @change="toggleItem(item)"
+                                                        :data-item-id="item.item_id"
+                                                        :data-product-id="item.product_id" />
+                                                    <div class="text-md leading-relaxed">
+                                                        <strong class="font-semibold" x-text="item.name"></strong><br>
+                                                        <span class="text-gray-500"><?= $escaper->escapeHtml(__('SKU:'))?></span> <span x-text="item.sku"></span> |
+                                                        <span class="text-gray-500"><?= $escaper->escapeHtml(__('Ordered Qty:'))?></span> <span x-text="item.qty_ordered"></span> |
+                                                        <span class="text-gray-500"><?= $escaper->escapeHtml(__('Price:'))?></span> <span x-html="item.price"></span> |
+                                                        <span class="text-gray-500"><?= $escaper->escapeHtml(__('Row Total:'))?></span> <span x-html="item.totalPrice"></span>
+                                                    </div>
+                                                </div>
+                                                <!-- Return Form -->
+                                                <div class="item-inputs w-full mt-5"
+                                                    x-show="selectedItems.includes(item.item_id)"
+                                                    x-transition>
+                                                    <div class="flex flex-wrap items-start gap-6">
+                                                        <!-- Qty -->
+                                                        <div class="flex flex-col flex-1 min-w-[12rem] text-md">
+                                                            <label for="qty" class="font-medium mb-1">
+                                                                <?= $escaper->escapeHtml(__('Qty'))?>
+                                                            </label>
+                                                            <input type="text"
+                                                                class="input-text block w-full rounded-md text-sm border-0 px-2 pr-8 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400
+                                                                    focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                                                                :name="`return_qty[${item.item_id}]`"
+                                                                min="1" :max="parseInt(item.qty_ordered)"
+                                                                :data-returnable="parseInt(item.qty_returnable)"
+                                                                value="1"
+                                                                id="qty"
+                                                                @input="$event.target.value = $event.target.value.replace(/[^0-9]/g, ''); qtyError(item.item_id, $event.target)">
+                                                            <div class="flex flex-col justify-end pt-1">
+                                                                <span class="text-sm text-gray-500"
+                                                                    x-text="`Returnable Qty: ${item.qty_returnable}`"></span>
+                                                                <span class="text-sm text-red-600 mt-1" x-text="itemErrors[item.item_id]"></span>
+                                                            </div>
+                                                        </div>
+                                                        <!-- Reason -->
+                                                        <div class="flex flex-col flex-1 min-w-[12rem]">
+                                                            <label for="reason" class="font-medium mb-1">
+                                                                <?= $escaper->escapeHtml(__('Reason'))?>
+                                                            </label>
+                                                            <select class="cursor-pointer mb-4 text-sm rounded-md px-2 pr-8 py-2 ring-1 ring-inset ring-gray-300 text-gray-900"
+                                                                    id="reason"
+                                                                    :name="`reason[${item.item_id}]`">
+                                                                <template x-for="r in reasons">
+                                                                    <option x-text="r.trim()"></option>
+                                                                </template>
+                                                            </select>
+                                                        </div>
+                                                        <!-- Condition -->
+                                                        <div class="flex flex-col flex-1 min-w-[12rem]">
+                                                            <label for="condition" class="font-medium mb-1">
+                                                                <?= $escaper->escapeHtml(__('Condition'))?>
+                                                            </label>
+                                                            <select class="cursor-pointer mb-4 text-sm rounded-md px-2 pr-8 py-2 ring-1 ring-inset ring-gray-300 text-gray-900"
+                                                                    id="condition"
+                                                                    :name="`condition[${item.item_id}]`">
+                                                                <template x-for="c in conditions">
+                                                                    <option x-text="c.trim()"></option>
+                                                                </template>
+                                                            </select>
+                                                        </div>
+                                                        <!-- Resolution -->
+                                                        <div class="flex flex-col flex-1 min-w-[12rem]">
+                                                            <label for="resolution" class="font-medium mb-1">
+                                                                <?= $escaper->escapeHtml(__('Resolution'))?>
+                                                            </label>
+                                                            <select class="cursor-pointer mb-4 text-sm rounded-md px-2 pr-8 py-2 ring-1 ring-inset ring-gray-300 text-gray-900"
+                                                                    id="resolution"
+                                                                    :name="`resolutions[${item.item_id}]`">
+                                                                <template x-for="res in resolutions">
+                                                                    <option x-text="res.trim()"></option>
+                                                                </template>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Uploader -->
+                                                    <div class="mt-4 w-full" x-show="uploadCfg.uploadAllowed">
+                                                        <label for="file_input" class="text-md font-semibold"><?= $escaper->escapeHtml(__('Upload Files:'))?></label>
+                                                        <p class="text-sm mb-4">
+                                                            <span class="font-semibold">
+                                                                <?= $escaper->escapeHtml(__('File Types :'))?>
+                                                            </span>
+                                                            <span x-text="uploadCfg.allowedTypes"></span> |&nbsp;
+                                                            <span class="font-semibold">
+                                                                <?= $escaper->escapeHtml(__('File Size'))?> <span class="text-xs"><?= $escaper->escapeHtml(__('(per file)'))?></span> :
+                                                            </span>
+                                                            <span x-text="uploadCfg.maxSizeMb"></span><?= $escaper->escapeHtml(__('MB'))?> |&nbsp;
+                                                            <span class="font-semibold">
+                                                                <?= $escaper->escapeHtml(__('No. of files :'))?>
+                                                            </span>
+                                                            <span x-text="uploadCfg.maxFileCount"></span> |&nbsp;
+                                                        </p>
+                                                        <div class="rma-item-image-container flex flex-wrap gap-4 mb-3"
+                                                            :id="`uploader-${item.item_id}`"
+                                                            :data-item-id="item.item_id"
+                                                            x-data="imageUploader($el, item.item_id, uploadCfg.maxFileCount, bytes, uploadCfg.allowedTypes)">
+
+                                                            <!-- Previews -->
+                                                            <div class="upload-preview flex flex-wrap gap-4 mb-3">
+                                                                <template x-for="file in files" :key="file.data">
+                                                                    <div class="relative">
+                                                                        <!-- Remove button -->
+                                                                        <button type="button"
+                                                                                class="absolute top-0 right-0 bg-red-600 text-white rounded-full w-5 h-5 text-xs"
+                                                                                @click="removeFile(file)">
+                                                                            &times;
+                                                                        </button>
+
+                                                                        <!-- Image -->
+                                                                        <template x-if="['jpg','jpeg','png','gif','bmp','webp'].includes(file.ext)">
+                                                                            <!-- Image should have its alt text -->
+                                                                            <img :src="file.data" class="w-28 h-28 object-cover border rounded" />
+                                                                        </template>
+
+                                                                        <!-- PDF -->
+                                                                        <template x-if="file.ext === 'pdf'">
+                                                                            <embed :src="file.data" type="application/pdf" class="w-28 h-28 border rounded" />
+                                                                        </template>
+
+                                                                        <!-- Other types -->
+                                                                        <template x-if="!['jpg','jpeg','png','gif','bmp','webp','pdf'].includes(file.ext)">
+                                                                            <div class="w-28 h-28 flex items-center justify-center bg-gray-100 border text-xs"
+                                                                                x-text="file.ext">
+                                                                            </div>
+                                                                        </template>
+                                                                    </div>
+                                                                </template>
+                                                            </div>
+
+                                                            <!-- Dropzone -->
+                                                            <div x-show="!disabled"
+                                                                class="custom-uploader w-32 h-32 border-2 border-dashed rounded-lg
+                                                                        flex items-center justify-center cursor-pointer bg-gray-50
+                                                                        relative hover:bg-gray-100"
+                                                                @dragover.prevent
+                                                                @drop.prevent="dropFiles($event)">
+                                                                <span class="upload-placeholder text-sm text-gray-500"><?= $escaper->escapeHtml(__('Click or drag'))?></span>
+                                                                <input type="file" multiple
+                                                                    class="upload-input absolute inset-0 opacity-0 cursor-pointer"
+                                                                    :accept="acceptAttr"
+                                                                    :disabled="disabled"
+                                                                    @change="handleFileChange" />
+                                                            </div>
+
+                                                            <small class="upload-limit-msg text-lg text-red-600 hidden mt-5">
+                                                                <?= $escaper->escapeHtml(__('*Maximum upload limit reached'))?>
+                                                            </small>
+
+                                                            <input id="file_input" type="hidden" name="upload_images_data[]"
+                                                                class="file-name-input" :value="jsonValue" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </template>
+
+                                    <!-- No items -->
+                                    <h3 class="text-center text-sm text-gray-600"
+                                        x-show="!hasIncludedItems()"><?= $escaper->escapeHtml(__('No Items available for Return'))?></h3>
+                                </div>
+                            </template>
+                            <!-- Modal Footer -->
+                            <div class="mt-6 flex justify-end gap-2">
+                                <button class="action update secondary-btn flex-auto sm:flex-none "
+                                        @click="closeModal()"><?= $escaper->escapeHtml(__('Cancel')) ?></button>
+
+                                <button type="button" @click="submitReturnRequest()"
+                                        class="action submit primary primary primary-btn"
+                                        :disabled="displayLoading">
+                                        <template x-if="displayLoading">
+                                            <span class="w-6 h-6 inline-block border-2 border-white border-r-transparent rounded-full animate-spin mr-2"></span>
+                                        </template>
+                                        <span><?= $escaper->escapeHtml(__('Submit Return Request')) ?></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+    <?php else: ?>
+        <p class="message error"><?= $escaper->escapeHtml(__('Unable to load order. Please check your information.'))?></p>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
