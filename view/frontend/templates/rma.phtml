@@ -1,4 +1,26 @@
-<?php // @phpcs:disable Generic.Files.LineLength?>
+<?php
+/**
+ * ViraXpress - https://www.viraxpress.com
+ *
+ * LICENSE AGREEMENT
+ *
+ * This file is part of the ViraXpress package and is licensed under the ViraXpress license agreement.
+ * You can view the full license at:
+ * https://www.viraxpress.com/license
+ *
+ * By utilizing this file, you agree to comply with the terms outlined in the ViraXpress license.
+ *
+ * DISCLAIMER
+ *
+ * Modifications to this file are discouraged to ensure seamless upgrades and compatibility with future releases.
+ *
+ * @category    ViraXpress
+ * @package     ViraXpress_Rma
+ * @author      ViraXpress
+ * @copyright   © 2026 ViraXpress (https://www.viraxpress.com/)
+ * @license     https://www.viraxpress.com/license
+ */
+ // @phpcs:disable Generic.Files.LineLength?>
 
 <div x-data='rmaComponent()' x-init="init()" class="w-full shadow-sm border border-gray-100 rounded-lg p-4 bg-white mb-6">
     <!-- Custom Confirm Modal -->
@@ -268,41 +290,28 @@
                                 <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2" x-text="item.reason"></td>
                                 <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2" x-text="item.resolution"></td>
                                 <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2" x-text="item.status"></td>
-                                <td class="p-3 text-center">
-                                    <!-- Show dash when no images/files -->
-                                    <template x-if="!item.images || item.images.length === 0">
-                                        <span class="text-center text-gray-500">-</span>
-                                    </template>
-                                    <!-- Show files when they exist -->
-                                    <template x-if="item.images && item.images.length > 0">
-                                        <div class="flex flex-wrap gap-2 items-center">
-                                            <template x-for="url in item.images" :key="url">
-                                                <div class="relative">
-                                                    <!-- PDF Display -->
-                                                    <div x-show="isPdf(url)" class="w-32 h-40 border rounded overflow-hidden">
-                                                        <div class="absolute w-full h-full bg-transparent cursor-pointer" @click="previewFile(url)"></div>
-                                                        <embed :src="url" type="application/pdf" class="w-full h-full pointer-events-none" />
-                                                    </div>
-                                                    
-                                                    <!-- Other Files Display -->
-                                                    <a x-show="isOther(url)" :href="url" target="_blank" 
-                                                    class="flex items-center w-32 h-40 gap-2 px-3 py-2 rounded-lg border border-gray-300 bg-white shadow-sm hover:shadow-md hover:bg-gray-50 transition text-gray-800 max-w-[12rem] overflow-hidden" 
-                                                    title="Click to open file">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none"
-                                                            viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                                        </svg>
-                                                        <span x-text="getFileName(url)" class="text-sm truncate"></span>
-                                                    </a>
-                                                    
-                                                    <!-- Image Display -->
-                                                    <img x-show="isImage(url)" :src="url" alt="File Image" 
-                                                        class="w-16 h-16 object-cover cursor-pointer border rounded hover:shadow-md transition" 
-                                                        @click="previewFile(url)"/>
+                                <td class="p-3">
+                                    <div class="flex flex-wrap gap-2 items-center">
+                                        <template x-for="url in item.images" :key="url">
+                                            <div class="relative">
+                                                <div x-show="isPdf(url)" class="w-32 h-40 border rounded overflow-hidden">
+                                                    <div class="absolute w-full h-full bg-transparent" @click="previewFile(url)"></div>
+                                                    <embed :src="url" type="application/pdf" class="w-full h-full" />
                                                 </div>
-                                            </template>
-                                        </div>
-                                    </template>
+                                                <a x-show="isOther(url)" :href="url" target="_blank" class="flex items-center w-32 h-40 gap-2 px-3 py-2 rounded-lg border border-gray-300 bg-white shadow-sm hover:shadow-md hover:bg-gray-50 transition text-gray-800 max-w-[12rem] overflow-hidden" title="Click to open file">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none"
+                                                        viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                                    </svg>
+                                                    <span x-text="getFileName(url)" class="text-sm truncate"></span>
+                                                </a>
+                                                <img x-show="isImage(url)" :src="url" alt="RMA Image" class="w-16 h-16 object-cover cursor-pointer border rounded" @click="previewFile(url)"/>
+                                            </div>
+                                        </template>
+                                        <template x-if="item.images <= 0">
+                                            <span class="text-center">-</span>
+                                        </template>
+                                    </div>
                                 </td>
                                 <td class="p-3">
                                     <template x-if="(item.rma_status === 'Approved' || item.rma_status === 'Pending') && item.status !== 'Cancelled'">

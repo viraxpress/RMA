@@ -17,7 +17,7 @@
  * @category    ViraXpress
  * @package     ViraXpress_Rma
  * @author      ViraXpress
- * @copyright   © 2024 ViraXpress (https://www.viraxpress.com/)
+ * @copyright   © 2026 ViraXpress (https://www.viraxpress.com/)
  * @license     https://www.viraxpress.com/license
  */ -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
@@ -39,7 +39,7 @@
                 </field>
                 <field id="return_window" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Return Window (days after Order Shipped)</label>
-                    <validate>validate-number validate-zero-or-greater validate-digits validate-digits-range digits-range-1-100</validate>
+                    <validate>validate-number validate-zero-or-greater</validate>
                     <frontend_class>required-entry</frontend_class>
                 </field>
                 <field id="status" translate="label" type="text" sortOrder="40"
@@ -119,7 +119,7 @@
                 <field id="allowed_statuses" translate="label" type="multiselect" sortOrder="20"
                     showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Allowed Order Statuses </label>
-                    <source_model>ViraXpress\Rma\Model\Config\Source\CompleteStatuses</source_model>
+                    <source_model>Magento\Sales\Model\Config\Source\Order\Status</source_model>
                     <validate>required-entry</validate>
                     <frontend_class>required-entry</frontend_class>
                 </field>

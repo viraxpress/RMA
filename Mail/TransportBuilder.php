@@ -20,24 +20,27 @@
  * @copyright   © 2026 ViraXpress (https://www.viraxpress.com/)
  * @license     https://www.viraxpress.com/license
  */
+
 declare(strict_types=1);
 
-namespace ViraXpress\Rma\Model\ResourceModel;
+namespace ViraXpress\Rma\Mail;
 
-use Magento\Framework\Model\ResourceModel\Db\AbstractDb;
+use Magento\Framework\Mail\Template\TransportBuilder as CoreTransportBuilder;
 
 /**
- * Resource model for RMA Request entity
+ * Class TransportBuilder
+ *
+ * Extension to Magento Mail TransportBuilder to publicly expose the reset() method.
  */
-class Request extends AbstractDb
+class TransportBuilder extends CoreTransportBuilder
 {
     /**
-     * Initialize resource model
+     * Expose the parent reset() publicly so it can be called after each send.
      *
-     * @return void
+     * @return static
      */
-    protected function _construct()
+    public function resetBuilder(): static
     {
-        $this->_init('viraxpress_rma_requests', 'rma_id');
+        return $this->reset();
     }
 }

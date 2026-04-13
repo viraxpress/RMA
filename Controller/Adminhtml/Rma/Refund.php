@@ -17,7 +17,7 @@
  * @category    ViraXpress
  * @package     ViraXpress_Rma
  * @author      ViraXpress
- * @copyright   © 2024 ViraXpress (https://www.viraxpress.com/)
+ * @copyright   © 2026 ViraXpress (https://www.viraxpress.com/)
  * @license     https://www.viraxpress.com/license
  */
 declare(strict_types=1);
@@ -34,14 +34,13 @@ use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Service\CreditmemoService;
 use Magento\Sales\Model\Order\CreditmemoFactory;
 use Magento\Framework\DB\Transaction;
-use Magento\Framework\Mail\Template\TransportBuilder;
+use ViraXpress\Rma\Mail\TransportBuilderFactory as TransportBuilder;
 use Magento\Framework\Mail\Template\SenderResolverInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use ViraXpress\Rma\Model\RequestFactory;
 use ViraXpress\Rma\Model\ItemFactory;
 use ViraXpress\Rma\Model\ItemInspectionFactory;
 use ViraXpress\Rma\Model\ItemInspection;
-
 /**
  * Class Refund
  *
@@ -271,27 +270,28 @@ class Refund extends Action
             'order_id'      => $order->getIncrementId(),
             'customer_name' => $order->getCustomerName(),
         ];
-
+    
         $identityCode = (string)$this->scopeConfig->getValue(
             self::XML_SENDER_IDENTITY,
             ScopeInterface::SCOPE_STORE,
             $storeId
         ) ?: 'general';
         $sender = $this->senderResolver->resolve($identityCode, $storeId);
-
-        $tplCustomer = (string)$this->scopeConfig->getValue(
+    
+        $tplCustomer   = (string)$this->scopeConfig->getValue(
             self::XML_REFUND_TEMPLATE,
             ScopeInterface::SCOPE_STORE,
             $storeId
         );
         $customerEmail = (string)$order->getCustomerEmail();
-
+    
+        // ── Customer email ────────────────────────────────────────────────────
         if ($tplCustomer && $customerEmail) {
-            $this->transportBuilder
+            $this->transportBuilder->create()          // ← create() gives a fresh TransportBuilder
                 ->setTemplateIdentifier($tplCustomer)
                 ->setTemplateOptions([
                     'area'  => \Magento\Framework\App\Area::AREA_FRONTEND,
-                    'store' => $storeId
+                    'store' => $storeId,
                 ])
                 ->setTemplateVars($vars)
                 ->setFromByScope($sender, $storeId)
@@ -299,24 +299,33 @@ class Refund extends Action
                 ->getTransport()
                 ->sendMessage();
         }
-
-        if ($this->scopeConfig->isSetFlag(self::XML_REFUND_SEND_TO_ADMIN, ScopeInterface::SCOPE_STORE, $storeId)) {
-            $adminEmail = (string)$this->scopeConfig
-            ->getValue(self::XML_REFUND_ADMIN_EMAIL, ScopeInterface::SCOPE_STORE, $storeId);
+    
+        // ── Admin email ───────────────────────────────────────────────────────
+        if ($this->scopeConfig->isSetFlag(
+            self::XML_REFUND_SEND_TO_ADMIN,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        )) {
+            $adminEmail = (string)$this->scopeConfig->getValue(
+                self::XML_REFUND_ADMIN_EMAIL,
+                ScopeInterface::SCOPE_STORE,
+                $storeId
+            );
+    
             if (filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
-                $tplAdmin = (string)$this->scopeConfig
-                ->getValue(self::XML_REFUND_TEMPLATE, ScopeInterface::SCOPE_STORE, $storeId) ?: $tplCustomer;
-
-                $adminTransport = $this->transportBuilder
-                    ->setTemplateIdentifier($tplAdmin ?: 'rma_replacement_email_template')
+                $tplAdmin = $tplCustomer ?: 'rma_refund_email_template';
+    
+                $this->transportBuilder->create()      // ← fresh instance, no stale state
+                    ->setTemplateIdentifier($tplAdmin)
                     ->setTemplateOptions([
                         'area'  => \Magento\Framework\App\Area::AREA_FRONTEND,
-                        'store' => $storeId
+                        'store' => $storeId,
                     ])
                     ->setTemplateVars($vars)
-                    ->setFromByScope($sender, $storeId);
-
-                $adminTransport->getTransport()->sendMessage();
+                    ->setFromByScope($sender, $storeId)
+                    ->addTo($adminEmail)
+                    ->getTransport()
+                    ->sendMessage();
             }
         }
     }

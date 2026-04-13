@@ -17,9 +17,10 @@
  * @category    ViraXpress
  * @package     ViraXpress_Rma
  * @author      ViraXpress
- * @copyright   © 2024 ViraXpress (https://www.viraxpress.com/)
+ * @copyright   © 2026 ViraXpress (https://www.viraxpress.com/)
  * @license     https://www.viraxpress.com/license
  */
+
 use Magento\Framework\Component\ComponentRegistrar;
 
 ComponentRegistrar::register(

@@ -17,7 +17,7 @@
  * @category    ViraXpress
  * @package     ViraXpress_Rma
  * @author      ViraXpress
- * @copyright   © 2024 ViraXpress (https://www.viraxpress.com/)
+ * @copyright   © 2026 ViraXpress (https://www.viraxpress.com/)
  * @license     https://www.viraxpress.com/license
  */
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use Magento\Store\Model\StoreManagerInterface;
 use ViraXpress\Rma\Model\ItemFactory;
 use ViraXpress\Rma\Model\ItemImageFactory;
 use ViraXpress\Rma\Model\RequestFactory;
-
+use Magento\Sales\Api\OrderRepositoryInterface;
 
 /**
  * Controller: Handle AJAX POST “Save RMA request” from the storefront.
@@ -109,8 +109,13 @@ class Save extends Action
 
     /** @var SenderResolverInterface */
     private SenderResolverInterface $senderResolver;
+
     /** @var Filesystem */
     protected $filesystem;
+
+    /** @var OrderRepositoryInterface */
+    protected $orderRepository;
+
     /**
      * DI constructor.
      *
@@ -127,6 +132,7 @@ class Save extends Action
      * @param Filesystem                 $filesystem
      * @param ScopeConfigInterface       $scopeConfig
      * @param SenderResolverInterface    $senderResolver
+     * @param OrderRepositoryInterface   $orderRepository
      */
     public function __construct(
         Context                     $context,
@@ -142,6 +148,7 @@ class Save extends Action
         Filesystem                  $filesystem,
         ScopeConfigInterface        $scopeConfig,
         SenderResolverInterface     $senderResolver,
+        OrderRepositoryInterface    $orderRepository,
     ) {
         parent::__construct($context);
         $this->jsonFactory       = $jsonFactory;
@@ -156,6 +163,7 @@ class Save extends Action
         $this->filesystem        = $filesystem;
         $this->scopeConfig       = $scopeConfig;
         $this->senderResolver    = $senderResolver;
+        $this->orderRepository   = $orderRepository;
     }
 
     /**
@@ -300,9 +308,9 @@ class Save extends Action
     {
         /* template variables -------------------------------------------------------- */
         $tplVars = [
-            'customer_name'  => (string)($payload['request']['customer_name'] ?? __('Customer')),
-            'order_id'       => (string)$payload['request']['order_id'],
-            'status'         => __('Pending'),
+            'customer_name'  => (string)($payload['request']['customer_name'] ?? __('Customer')->getText()),
+            'order_id'       => (string)$this->orderRepository->get((int)$payload['request']['order_id'])->getIncrementId(),
+            'status'         => 'Pending',
             'items'          => $emailItems,
             'customer_email' => (string)($payload['request']['customer_email'] ?? ''),
         ];
@@ -323,18 +331,18 @@ class Save extends Action
         );
 
         if (!empty($tplVars['customer_email']) && $templateId) {
-            $this->transportBuilder
-                ->setTemplateIdentifier($templateId)
-                ->setTemplateOptions([
-                    'area'  => \Magento\Framework\App\Area::AREA_FRONTEND,
-                    'store' => $storeId
-                ])
-                ->setTemplateVars($tplVars)
-                ->setFromByScope($sender, $storeId)
-                ->addTo($tplVars['customer_email'], $tplVars['customer_name'])
-                ->getTransport()
-                ->sendMessage();
-        }
+    $transport = $this->transportBuilder
+        ->setTemplateIdentifier($templateId)
+        ->setTemplateOptions([
+            'area'  => \Magento\Framework\App\Area::AREA_FRONTEND,
+            'store' => $storeId
+        ])
+        ->setTemplateVars($tplVars)
+        ->setFromByScope($sender, $storeId)
+        ->addTo($tplVars['customer_email'], $tplVars['customer_name'])
+        ->getTransport();
+    $transport->sendMessage();
+}
 
         /* optional admin copy ------------------------------------------------------- */
         if ($this->scopeConfig->isSetFlag(self::XML_PATH_SEND_TO_ADMIN, ScopeInterface::SCOPE_STORE, $storeId)) {
@@ -375,7 +383,7 @@ class Save extends Action
                         $adminTransport->addBcc($adminEmail);
                         break;
                     default:
-                        $adminTransport->addTo($adminEmail, __('Store Admin'));
+                        $adminTransport->addTo($adminEmail, __('Store Admin')->getText());
                 }
 
                 $adminTransport->getTransport()->sendMessage();

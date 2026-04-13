@@ -1,4 +1,26 @@
 <?php
+/**
+ * ViraXpress - https://www.viraxpress.com
+ *
+ * LICENSE AGREEMENT
+ *
+ * This file is part of the ViraXpress package and is licensed under the ViraXpress license agreement.
+ * You can view the full license at:
+ * https://www.viraxpress.com/license
+ *
+ * By utilizing this file, you agree to comply with the terms outlined in the ViraXpress license.
+ *
+ * DISCLAIMER
+ *
+ * Modifications to this file are discouraged to ensure seamless upgrades and compatibility with future releases.
+ *
+ * @category    ViraXpress
+ * @package     ViraXpress_Rma
+ * @author      ViraXpress
+ * @copyright   © 2026 ViraXpress (https://www.viraxpress.com/)
+ * @license     https://www.viraxpress.com/license
+ */
+
 // @phpcs:disable Generic.Files.LineLength
 /** @var $block \Magento\Config\Block\System\Config\Form\Field */
 $element = $block->getElement();
@@ -7,20 +29,6 @@ $elementName = $element->getName();
 $cssClass = $block->getData('list_class') ?: 'generic-list';
 $values = $element->getValue() ? explode(',', $element->getValue()) : [];
 ?>
-<style>
-.remove-field,.add-field {
-    padding: 6px 10px;
-    cursor: pointer !important;
-    width: 50px;
-}
-.remove-field{
-    background-color:rgb(255, 10, 10) !important;
-    color:white;
-}
-.remove-field:hover{
-    color:white;
-}
-</style>
 <div id="<?= $escaper->escapeHtmlAttr($elementId) ?>_wrapper">
     <ul class="<?= $escaper->escapeHtmlAttr($cssClass) ?> generic-list " id="<?= $escaper->escapeHtmlAttr($elementId) ?>_list">
         <?php foreach ($values as $value): ?>

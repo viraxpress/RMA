@@ -1,4 +1,26 @@
 <?php
+/**
+ * ViraXpress - https://www.viraxpress.com
+ *
+ * LICENSE AGREEMENT
+ *
+ * This file is part of the ViraXpress package and is licensed under the ViraXpress license agreement.
+ * You can view the full license at:
+ * https://www.viraxpress.com/license
+ *
+ * By utilizing this file, you agree to comply with the terms outlined in the ViraXpress license.
+ *
+ * DISCLAIMER
+ *
+ * Modifications to this file are discouraged to ensure seamless upgrades and compatibility with future releases.
+ *
+ * @category    ViraXpress
+ * @package     ViraXpress_Rma
+ * @author      ViraXpress
+ * @copyright   © 2026 ViraXpress (https://www.viraxpress.com/)
+ * @license     https://www.viraxpress.com/license
+ */
+
 /** @var \ViraXpress\Rma\Block\Lookup $block */
 // @phpcs:disable Generic.Files.LineLength
 $formKey        = $block->getFormKey();
@@ -18,58 +40,14 @@ function otpLookupComponent() {
         countdownTimer: null,
         canResend: true,
         displayLoading:false,
-        user_error: '',
-        errors: {
-            order_id: '',
-            lastname: '',
-            email: ''
-        },
 
         initComponent(otpVerifyUrl, verifyOtpUrl) {
             this.otpVerifyUrl = otpVerifyUrl;
             this.verifyOtpUrl = verifyOtpUrl;
         },
-        validateOtp() {
-            if(this.userOtp == ''){
-                this.user_error = "Required Field";
-                return false;
-            }
-            this.user_error = '';
-            return true;
-        },
-        validateField(field) {
-            if (field === 'order_id') {
-                this.errors.order_id = this.form.order_id.trim() === ''
-                    ? 'Required Field' : '';
-            }
-
-            if (field === 'lastname') {
-                this.errors.lastname = this.form.lastname.trim() === ''
-                    ? 'Required Field' : '';
-            }
-
-            if (field === 'email') {
-                if (this.form.email.trim() === '') {
-                    this.errors.email = 'Required Field';
-                } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email)) {
-                    this.errors.email = 'Please enter a valid email';
-                } else {
-                    this.errors.email = '';
-                }
-            }
-        },
-        validateFields() {
-            Object.keys(this.form).forEach(field => this.validateField(field));
-            return Object.values(this.errors).every(error => error === '');
-        },
 
         submitLookup() {
             this.displayLoading=true;
-            if (!this.validateFields()) {
-                this.displayLoading = false;
-                // displayMessages([{text: 'Please fix the highlighted errors.', type: "error"}]);
-                return;
-            }
             if (!this.canResend) {
                 this.displayLoading=false;
                 this.showOtpModal = true;
@@ -112,10 +90,8 @@ function otpLookupComponent() {
                 }
             }, 1000);
         },
+
         verifyOtp() {
-            if (!this.validateOtp()) {
-                return;
-            }
             const payload = { ...this.otpData, user_otp: this.userOtp };
             fetch(this.verifyOtpUrl, {
                 method: 'POST',
@@ -138,12 +114,6 @@ function otpLookupComponent() {
 
         resendOtp() {
             if (!this.canResend) return;
-            if (!this.validateFields()) {
-                this.displayLoading = false;
-                // displayMessages([{text: 'Please fix the highlighted errors.', type: "error"}]);
-                return;
-            }
-            this.userOtp="";
             this.startCountdown(30);
             fetch(this.otpVerifyUrl, {
                 method: 'POST',

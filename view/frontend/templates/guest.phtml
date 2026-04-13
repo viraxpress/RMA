@@ -1,5 +1,27 @@
 
 <?php
+/**
+ * ViraXpress - https://www.viraxpress.com
+ *
+ * LICENSE AGREEMENT
+ *
+ * This file is part of the ViraXpress package and is licensed under the ViraXpress license agreement.
+ * You can view the full license at:
+ * https://www.viraxpress.com/license
+ *
+ * By utilizing this file, you agree to comply with the terms outlined in the ViraXpress license.
+ *
+ * DISCLAIMER
+ *
+ * Modifications to this file are discouraged to ensure seamless upgrades and compatibility with future releases.
+ *
+ * @category    ViraXpress
+ * @package     ViraXpress_Rma
+ * @author      ViraXpress
+ * @copyright   © 2026 ViraXpress (https://www.viraxpress.com/)
+ * @license     https://www.viraxpress.com/license
+ */
+
 /** @var \ViraXpress\Rma\Block\GuestRma $block */
  // @phpcs:disable Generic.Files.LineLength
  $order =$block->getOrder();
@@ -55,93 +77,75 @@
             <div class="md:w-2/3">
             <div x-data='returnOrdersComponent()' class="space-y-4">
                 <!-- ORDERS TABLE -->
-                <template x-if="orders.length > 0 && orders.some(order => hasReturnableItems(order))">
-                    <div class="w-full shadow-sm border border-gray-100 rounded-lg p-4 bg-white mb-6">
-                        <table class="min-w-full border-collapse">
-                            <thead>
-                                <tr class="border-b border-gray-200 hidden md:table-row">
-                                    <th class="col id w-[115px]">
-                                        <div class="p-2 text-left text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Order #'))?></div>
-                                    </th>
-                                    <th class="col id w-[115px]">
-                                        <div class="p-2 text-left text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Order Date'))?></div>
-                                    </th>
-                                    <th class="col id w-[115px]">
-                                        <div class="p-2 text-left text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Order Status'))?></div>
-                                    </th>
-                                    <th class="col id w-[115px]">
-                                        <div class="p-2 text-left text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Return Window'))?></div>
-                                    </th>
-                                    <th class="col id w-[115px]">
-                                        <div class="p-2 text-left text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Total'))?></div>
-                                    </th>
-                                    <th class="col id w-[115px]">
-                                        <div class="p-2 text-left text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Action'))?></div>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-for="order in orders" :key="order.entity_id">
-                                    <template x-if="hasReturnableItems(order)">
-                                        <tr class="border-b border-gray-200 pb-4 mb-4 block md:table-row last:border-b-0">
-                                            <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2">
-                                                <div class="flex items-center gap-2">
-                                                    <span x-text="order.increment_id"></span>
-                                                </div>
-                                            </td>
-                                            <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2">
-                                                <span x-text="order.created_at"></span>
-                                            </td>
-                                            <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2">
-                                                <span  x-text="order.status"></span>
-                                            </td>
-                                            <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2">
-                                                <template x-if="order.days_remaining > 0">
-                                                    <span class="text-gray-600" x-text="'Return window: ' + order.days_remaining + ' days'"></span>
-                                                </template>
-                                                <template x-if="order.days_remaining <= 0">
-                                                    <span class="text-red-600"><?= $escaper->escapeHtml(__('Expired')) ?></span>
-                                                </template>
-                                            </td>
-                                            <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2" x-html="order.grand_total"></td>
-                                            <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2">
-                                                <template x-if="order.days_remaining > 0 && hasReturnableItems(order)">
-                                                    <button class="action primary add primary-btn"
-                                                            @click.stop="openModal(order.entity_id)">
-                                                        <?= $escaper->escapeHtml(__('Return')) ?>
-                                                    </button>
-                                                </template>
-                                                <template x-if="order.days_remaining <= 0">
-                                                    <span class="text-red-600 text-sm"><?= $escaper->escapeHtml(__('Closed')) ?></span>
-                                                </template>
-                                            </td>
-                                        </tr>
-                                    </template>
+                <div class="w-full shadow-sm border border-gray-100 rounded-lg p-4 bg-white mb-6">
+                    <table class="min-w-full border-collapse">
+                        <thead>
+                            <tr class="border-b border-gray-200 hidden md:table-row">
+                                <th class="col id w-[115px]">
+                                    <div class="p-2 text-left text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Order #'))?></div>
+                                </th>
+                                <th class="col id w-[115px]">
+                                    <div class="p-2 text-left text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Order Date'))?></div>
+                                </th>
+                                <th class="col id w-[115px]">
+                                    <div class="p-2 text-left text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Order Status'))?></div>
+                                </th>
+                                <th class="col id w-[115px]">
+                                    <div class="p-2 text-left text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Return Window'))?></div>
+                                </th>
+                                <th class="col id w-[115px]">
+                                    <div class="p-2 text-left text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Total'))?></div>
+                                </th>
+                                <th class="col id w-[115px]">
+                                    <div class="p-2 text-left text-sm font-semibold text-gray-800"><?= $escaper->escapeHtml(__('Action'))?></div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="order in orders" :key="order.entity_id">
+                                <template x-if="hasReturnableItems(order)">
+                                    <tr class="border-b border-gray-200 pb-4 mb-4 block md:table-row last:border-b-0">
+                                        <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2">
+                                            <div class="flex items-center gap-2">
+                                                <span x-text="order.increment_id"></span>
+                                            </div>
+                                        </td>
+                                        <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2">
+                                            <span x-text="order.created_at"></span>
+                                        </td>
+                                        <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2">
+                                            <span  x-text="order.status"></span>
+                                        </td>
+                                        <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2">
+                                            <template x-if="order.days_remaining > 0">
+                                                <span class="text-gray-600" x-text="'Return window: ' + order.days_remaining + ' days'"></span>
+                                            </template>
+                                            <template x-if="order.days_remaining <= 0">
+                                                <span class="text-red-600"><?= $escaper->escapeHtml(__('Expired')) ?></span>
+                                            </template>
+                                        </td>
+                                        <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2" x-html="order.grand_total"></td>
+                                        <td class="col id p-2 py-3 text-sm text-gray-900 align-middle before:absolute before:left-0 before:font-semibold before:content-[attr(data-th)] md:before:content-none block md:table-cell relative pl-[45%] md:pl-2">
+                                            <template x-if="order.days_remaining > 0 && hasReturnableItems(order)">
+                                                <button class="action primary add primary-btn"
+                                                        @click.stop="openModal(order.entity_id)">
+                                                    <?= $escaper->escapeHtml(__('Return')) ?>
+                                                </button>
+                                            </template>
+                                            <template x-if="order.days_remaining <= 0">
+                                                <span class="text-red-600 text-sm"><?= $escaper->escapeHtml(__('Closed')) ?></span>
+                                            </template>
+                                        </td>
+                                    </tr>
                                 </template>
-                            </tbody>
-                        </table>
-                    </div>
-                </template>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
                 <!-- NO ORDERS MESSAGE -->
                 <template x-if="orders.length === 0 || !orders.some(order => hasReturnableItems(order))">
-                    <div class="overflow-x-auto rounded shadow border border-gray-300">
-                        <table class="w-full table-auto text-left">
-                            <thead>
-                                <tr>
-                                    <th colspan="6" class="px-4 py-8 text-center">
-                                        <div class="text-gray-500">
-                                            <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                            </svg>
-                                            <h3 class="text-lg font-medium text-gray-900 mb-1"><?= $escaper->escapeHtml(__('No Returnable Orders Found'))?></h3>
-                                            <p class="text-sm text-gray-500">
-                                                <span x-show="search.length === 0"><?= $escaper->escapeHtml(__('You have no returnable orders at this time.'))?></span>
-                                            </p>
-                                        </div>
-                                    </th>
-                                </tr>
-                            </thead>
-                        </table>
+                    <div class="text-center text-gray-600 text-3xl py-10">
+                        <?= $escaper->escapeHtml(__('You have no returnable orders at this time.')) ?>
                     </div>
                 </template>
                 <!-- MODAL -->

@@ -17,7 +17,7 @@
  * @category    ViraXpress
  * @package     ViraXpress_Rma
  * @author      ViraXpress
- * @copyright   © 2024 ViraXpress (https://www.viraxpress.com/)
+ * @copyright   © 2026 ViraXpress (https://www.viraxpress.com/)
  * @license     https://www.viraxpress.com/license
  */
 namespace ViraXpress\Rma\Block;
@@ -45,7 +45,9 @@ class GuestRma extends Template
     /** @var OrderFactory */
     protected $orderFactory;
 
-    /** @var RequestInterface */
+    /** 
+     * @var RequestInterface    
+     */  
     protected $request;
 
     /** @var ScopeConfigInterface */
@@ -106,6 +108,10 @@ class GuestRma extends Template
      */
     public function getOrder()
     {
+        if (!$this->isRmaEnabled()) {
+            return null;
+        }
+
         $orderId = $this->request->getParam('order_id');
         $email = $this->request->getParam('email');
         $lastname = $this->request->getParam('lastname');

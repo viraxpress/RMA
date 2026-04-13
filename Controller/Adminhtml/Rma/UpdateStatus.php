@@ -17,7 +17,7 @@
  * @category    ViraXpress
  * @package     ViraXpress_Rma
  * @author      ViraXpress
- * @copyright   © 2024 ViraXpress (https://www.viraxpress.com/)
+ * @copyright   © 2026 ViraXpress (https://www.viraxpress.com/)
  * @license     https://www.viraxpress.com/license
  */
 declare(strict_types=1);
@@ -35,8 +35,7 @@ use Magento\Framework\Mail\Template\TransportBuilder;
 use Magento\Store\Model\StoreManagerInterface;
 use ViraXpress\Rma\Model\RequestFactory;
 use Magento\Email\Model\Template\SenderResolver;
-use Laminas\Mail\Address;
-use Laminas\Mail\AddressList;
+use Magento\Sales\Api\OrderRepositoryInterface;
 
 /**
  * Controller: Update an RMA request’s status from the admin panel
@@ -78,34 +77,41 @@ class UpdateStatus extends Action
     /** @var SenderResolver */
     protected $senderResolver;
 
+    /** @var OrderRepositoryInterface */
+    protected $orderRepository;
+
     /**
      * DI constructor.
      *
-     * @param Context                 $context
-     * @param JsonFactory             $jsonFactory
-     * @param RequestFactory          $requestFactory
-     * @param TransportBuilder        $transportBuilder
-     * @param StoreManagerInterface   $storeManager
-     * @param ScopeConfigInterface    $scopeConfig
-     * @param SenderResolver          $senderResolver
+     * @param Context                  $context
+     * @param JsonFactory              $jsonFactory
+     * @param RequestFactory           $requestFactory
+     * @param TransportBuilder         $transportBuilder
+     * @param StoreManagerInterface    $storeManager
+     * @param ScopeConfigInterface     $scopeConfig
+     * @param SenderResolver           $senderResolver
+     * @param OrderRepositoryInterface $orderRepository
      */
     public function __construct(
-        Context                 $context,
-        JsonFactory             $jsonFactory,
-        RequestFactory          $requestFactory,
-        TransportBuilder        $transportBuilder,
-        StoreManagerInterface   $storeManager,
-        ScopeConfigInterface    $scopeConfig,
-        SenderResolver          $senderResolver
+        Context                  $context,
+        JsonFactory              $jsonFactory,
+        RequestFactory           $requestFactory,
+        TransportBuilder         $transportBuilder,
+        StoreManagerInterface    $storeManager,
+        ScopeConfigInterface     $scopeConfig,
+        SenderResolver           $senderResolver,
+        OrderRepositoryInterface $orderRepository,
     ) {
         parent::__construct($context);
-        $this->jsonFactory      = $jsonFactory;
-        $this->requestFactory   = $requestFactory;
-        $this->transportBuilder = $transportBuilder;
-        $this->storeManager     = $storeManager;
-        $this->scopeConfig      = $scopeConfig;
-        $this->senderResolver   = $senderResolver;
-        $this->transportBuilder = $transportBuilder;
+        $this->jsonFactory       = $jsonFactory;
+        $this->requestFactory    = $requestFactory;
+        $this->transportBuilder  = $transportBuilder;
+        $this->storeManager      = $storeManager;
+        $this->scopeConfig       = $scopeConfig;
+        $this->senderResolver    = $senderResolver;
+        $this->transportBuilder  = $transportBuilder;
+        $this->orderRepository   = $orderRepository;
+
     }
 
     /* ────────────────────────────────────────────────────────────
@@ -189,7 +195,7 @@ class UpdateStatus extends Action
         /* Template variables */
         $vars = [
             'customer_name' => $name ?: __('Customer'),
-            'order_id'      => (string)$rma->getOrderId(),
+            'order_id'      => (string)$this->orderRepository->get((int)$rma->getOrderId())->getIncrementId(),
             'status'        => $rma->getStatus(),
             'rma_id'        => $rma->getId(),
         ];
@@ -205,8 +211,6 @@ class UpdateStatus extends Action
             'name'  => $identity['name'],
             'email' => $identity['email'],
         ];
-        $fromList = new AddressList();
-        $fromList->add(new Address($identity['email'], $identity['name']));
         /* Build transport and send */
         $this->transportBuilder
             ->setTemplateIdentifier($templateId)

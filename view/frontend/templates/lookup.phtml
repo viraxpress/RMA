@@ -1,4 +1,26 @@
 <?php
+/**
+ * ViraXpress - https://www.viraxpress.com
+ *
+ * LICENSE AGREEMENT
+ *
+ * This file is part of the ViraXpress package and is licensed under the ViraXpress license agreement.
+ * You can view the full license at:
+ * https://www.viraxpress.com/license
+ *
+ * By utilizing this file, you agree to comply with the terms outlined in the ViraXpress license.
+ *
+ * DISCLAIMER
+ *
+ * Modifications to this file are discouraged to ensure seamless upgrades and compatibility with future releases.
+ *
+ * @category    ViraXpress
+ * @package     ViraXpress_Rma
+ * @author      ViraXpress
+ * @copyright   © 2026 ViraXpress (https://www.viraxpress.com/)
+ * @license     https://www.viraxpress.com/license
+ */
+
 /** @var \ViraXpress\Rma\Block\Lookup $block */
 // @phpcs:disable Generic.Files.LineLength
 ?>
@@ -19,20 +41,17 @@
     <input name="form_key" type="hidden" x-model="form.form_key" value="<?= $escaper->escapeHtml($block->getFormKey())?>">
         <div>
             <label for="order_id" class="label block text-sm leading-6 text-gray-900"><?= $escaper->escapeHtml(__('Order ID'))?><span class="text-required ml-1">*</span></label>
-            <input type="text" @input="validateField('order_id')" id="order_id" x-model="form.order_id"  class="input-text block w-full rounded-md border-0 py-2.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6">
-            <span class="text-sm text-red-600 mt-1" x-text="errors.order_id"></span>
+            <input type="text" id="order_id" x-model="form.order_id" required class="input-text block w-full rounded-md border-0 py-2.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6">
         </div>
 
         <div>
             <label for="lastname" class="label block text-sm leading-6 text-gray-900"><?= $escaper->escapeHtml(__('Last Name'))?> <span class="text-required ml-1">*</span></label>
-            <input type="text" @input="validateField('lastname')" id="lastname" x-model="form.lastname"  class="input-text block w-full rounded-md border-0 py-2.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6">
-            <span class="text-sm text-red-600 mt-1" x-text="errors.lastname"></span>
+            <input type="text" id="lastname" x-model="form.lastname" required class="input-text block w-full rounded-md border-0 py-2.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6">
         </div>
 
         <div>
             <label for="email" class="label block text-sm leading-6 text-gray-900"><?= $escaper->escapeHtml(__('Email Address'))?> <span class="text-required ml-1">*</span></label>
-            <input type="email" @input="validateField('email')" id="email" x-model="form.email"  class="input-text block w-full rounded-md border-0 py-2.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6">
-            <span class="text-sm text-red-600 mt-1" x-text="errors.email"></span>
+            <input type="email" id="email" x-model="form.email" required class="input-text block w-full rounded-md border-0 py-2.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6">
         </div>
         <div class="primary mt-8">
             <button class="action login primary primary-btn flex w-full mb-3">
@@ -54,41 +73,32 @@
                     <span class="base"><?= $escaper->escapeHtml(__('OTP Verification'))?></span></h1>
                 </div>
                     <label for="user-otp" class="label block text-sm leading-6 text-gray-900"><?= $escaper->escapeHtml(__('Enter OTP'))?> <span class="text-required ml-1">*</span></label>
-                    <input type="text" @input="validateOtp" id="user-otp" x-model="userOtp" class="input-text block w-full rounded-md border-0 py-2.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6">
-                    <span class="text-sm text-red-600 mt-1" x-text="user_error"></span>
+                    <input type="text" id="user-otp" x-model="userOtp" class="input-text block w-full rounded-md border-0 py-2.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6">
+
                     <div class="flex space-x-2 items-center justify-center">
-                        <div class="primary mt-8 w-40">
-                            <button @click="verifyOtp"
-                                type="button"
-                                class="action login primary primary-btn flex justify-center items-center w-full h-12">
+                        <div class="primary mt-8">
+                            <button @click="verifyOtp" type="button" class="action login primary primary-btn flex w-full mb-3">
                                 <template x-if="displayLoading">
                                     <span class="w-6 h-6 inline-block border-2 border-white border-r-transparent rounded-full animate-spin"></span>
                                 </template>
                                 <span><?= $escaper->escapeHtml(__('Verify OTP'))?></span>
                             </button>
                         </div>
-
-                        <div class="relative primary mt-8 w-40">
+                        <div class="primary mt-8">
                             <button
                                 @click="resendOtp"
                                 :disabled="!canResend"
-                                class="action primary primary-btn flex flex-col justify-center items-center w-full h-12"
-                                :class="canResend ? 'secondary secondary-btn' : 'bg-gray-300 text-gray-500 cursor-not-allowed'">
+                                class="action login primary primary-btn flex w-full mb-3"
+                                :class="canResend ? 'action login secondary secondary-btn flex w-full mb-3' : 'bg-gray-300 text-gray-500 cursor-not-allowed'">
                                 <template x-if="displayLoading">
-                                    <span class="w-6 h-6 inline-block border-2 border-white border-r-transparent rounded-full animate-spin mb-1"></span>
+                                        <span class="w-6 h-6 inline-block border-2 border-white border-r-transparent rounded-full animate-spin"></span>
                                 </template>
-                                <span class="h-4 mt-2"><?= $escaper->escapeHtml(__('Resend OTP'))?></span>
-                                <span class="mt-2"></span>
-                                <span x-show="!canResend" class="absolute text-sm mt-6">
-                                    (<span x-text="countdown"></span>s)
-                                </span>
+                                <?= $escaper->escapeHtml(__('Resend OTP'))?>
+                                <span x-show="!canResend">(<span x-text="countdown"></span>s)</span>
                             </button>
                         </div>
-
-                        <div class="primary mt-8 w-40">
-                            <button type="button"
-                                @click="showOtpModal = false"
-                                class="delete-btn flex justify-center items-center w-full h-12">
+                        <div class="primary mt-5">
+                            <button type="button" @click="showOtpModal = false" class="delete-btn flex-auto sm:flex-none">
                                 <?= $escaper->escapeHtml(__('Cancel'))?>
                             </button>
                         </div>

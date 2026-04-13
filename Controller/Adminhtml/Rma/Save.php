@@ -18,7 +18,7 @@ declare(strict_types=1);
  * @category    ViraXpress
  * @package     ViraXpress_Rma
  * @author      ViraXpress
- * @copyright   © 2024 ViraXpress (https://www.viraxpress.com/)
+ * @copyright   © 2026 ViraXpress (https://www.viraxpress.com/)
  * @license     https://www.viraxpress.com/license
  */
 declare(strict_types=1);
@@ -43,6 +43,7 @@ use ViraXpress\Rma\Model\RequestFactory;
 use ViraXpress\Rma\Model\ItemFactory;
 use ViraXpress\Rma\Model\ItemImageFactory;
 use Magento\Framework\Filesystem\Io\File;
+use Magento\Sales\Api\OrderRepositoryInterface;
 
 /**
  * Class Save
@@ -113,6 +114,10 @@ class Save extends Action
      * @var File
      */
     protected $file;
+
+    /** @var OrderRepositoryInterface */
+    protected $orderRepository;
+
     /**
      * DI constructor.
      *
@@ -130,6 +135,7 @@ class Save extends Action
      * @param ScopeConfigInterface        $scopeConfig         Configuration reader
      * @param SenderResolverInterface     $senderResolver      Email sender resolver
      * @param File                        $file
+     * @param OrderRepositoryInterface    $orderRepository
      */
 
     public function __construct(
@@ -146,7 +152,8 @@ class Save extends Action
         UploaderFactory             $uploaderFactory,
         ScopeConfigInterface        $scopeConfig,
         SenderResolverInterface     $senderResolver,
-        File                        $file
+        File                        $file,
+        OrderRepositoryInterface    $orderRepository,
     ) {
         parent::__construct($context);
         $this->jsonFactory       = $jsonFactory;
@@ -162,6 +169,7 @@ class Save extends Action
         $this->scopeConfig       = $scopeConfig;
         $this->senderResolver    = $senderResolver;
         $this->file              = $file;
+        $this->orderRepository   = $orderRepository;
     }
 
     /**
@@ -323,7 +331,7 @@ class Save extends Action
     {
         $vars = [
             'customer_name'  => $payload['request']['customer_name'] ?? __('Customer'),
-            'order_id'       => $payload['request']['order_id'],
+            'order_id'       => (string)$this->orderRepository->get((int)$payload['request']['order_id'])->getIncrementId(),
             'status'         => $payload['request']['status'] ?? __('Pending'),
             'customer_email' => $payload['request']['customer_email'] ?? '',
             'items'          => $items,

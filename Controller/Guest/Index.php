@@ -17,7 +17,7 @@
  * @category    ViraXpress
  * @package     ViraXpress_Rma
  * @author      ViraXpress
- * @copyright   © 2024 ViraXpress (https://www.viraxpress.com/)
+ * @copyright   © 2026 ViraXpress (https://www.viraxpress.com/)
  * @license     https://www.viraxpress.com/license
  */
 namespace ViraXpress\Rma\Controller\Guest;
@@ -26,8 +26,6 @@ use Magento\Framework\App\Action\Action;
 use Magento\Framework\App\Action\Context;
 use Magento\Framework\View\Result\PageFactory;
 use Magento\Framework\View\Result\Page;
-use Magento\Store\Model\ScopeInterface;
-use Magento\Framework\App\Config\ScopeConfigInterface;
 
 /**
  * Class Index
@@ -41,35 +39,18 @@ class Index extends Action
      */
     protected PageFactory $resultPageFactory;
 
-    /** @var ScopeConfigInterface */
-    protected $scopeConfig;
     /**
      * Index constructor.
      *
-     * @param Context                       $context
-     * @param PageFactory                   $resultPageFactory
-     * @param ScopeConfigInterface          $scopeConfig
+     * @param Context $context Application context object.
+     * @param PageFactory $resultPageFactory Factory to create a page result.
      */
-    public function __construct
-    (
-        Context                             $context,
-        PageFactory                         $resultPageFactory,
-        ScopeConfigInterface                $scopeConfig,
-    )
+    public function __construct(Context $context, PageFactory $resultPageFactory)
     {
-        $this->resultPageFactory            = $resultPageFactory;
-        $this->scopeConfig                  = $scopeConfig;
+        $this->resultPageFactory = $resultPageFactory;
         parent::__construct($context);
     }
-    /**
-     * Check if RMA is enabled
-     *
-     * @return bool
-     */
-    public function isRmaEnabled()
-    {
-        return $this->scopeConfig->isSetFlag('rma/general/enable', ScopeInterface::SCOPE_STORE);
-    }
+
     /**
      * Execute method
      *
@@ -79,9 +60,6 @@ class Index extends Action
      */
     public function execute(): Page
     {
-        if (!$this->isRmaEnabled()) {
-            return null;
-        }
         return $this->resultPageFactory->create();
     }
 }

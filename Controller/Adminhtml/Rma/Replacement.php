@@ -17,7 +17,7 @@
  * @category    ViraXpress
  * @package     ViraXpress_Rma
  * @author      ViraXpress
- * @copyright   © 2024 ViraXpress (https://www.viraxpress.com/)
+ * @copyright   © 2026 ViraXpress (https://www.viraxpress.com/)
  * @license     https://www.viraxpress.com/license
  */
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use Magento\Store\Model\ScopeInterface;
 use Magento\Framework\UrlInterface;
 use Magento\Framework\DB\Transaction;
 use Magento\Framework\DataObject;
-use Magento\Framework\Mail\Template\TransportBuilder;
+use ViraXpress\Rma\Mail\TransportBuilderFactory as TransportBuilder;
 use Magento\Framework\Mail\Template\SenderResolverInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Sales\Api\OrderRepositoryInterface;
@@ -49,7 +49,6 @@ use ViraXpress\Rma\Model\RequestFactory;
 use ViraXpress\Rma\Model\ItemInspectionFactory;
 use ViraXpress\Rma\Model\ItemFactory;
 use ViraXpress\Rma\Model\ItemInspection;
-use \Magento\Framework\Url as FrontEndUrl;
 
 /**
  * Controller that:
@@ -136,8 +135,6 @@ class Replacement extends Action
     /** @var SenderResolverInterface */
     private SenderResolverInterface $senderResolver;
 
-    /** @var FrontEndUrl */
-    private FrontEndUrl $frontendUrl;
     /**
      * @var ItemInspection|null
      */
@@ -165,7 +162,6 @@ class Replacement extends Action
      * @param ItemFactory                   $itemFactory
      * @param ScopeConfigInterface          $scopeConfig
      * @param SenderResolverInterface       $senderResolver
-     * @param FrontEndUrl                   $frontendUrl
      */
     public function __construct(
         Context                             $context,
@@ -186,8 +182,7 @@ class Replacement extends Action
         ItemInspectionFactory               $itemInspectionFactory,
         ItemFactory                         $itemFactory,
         ScopeConfigInterface                $scopeConfig,
-        SenderResolverInterface             $senderResolver,
-        FrontEndUrl                         $frontendUrl
+        SenderResolverInterface             $senderResolver
     ) {
         parent::__construct($context);
 
@@ -210,7 +205,6 @@ class Replacement extends Action
         $this->itemFactory                  = $itemFactory;
         $this->scopeConfig                  = $scopeConfig;
         $this->senderResolver               = $senderResolver;
-        $this->frontendUrl                  = $frontendUrl;
     }
 
     /* ═════════════════════════════════════════════════════════════
@@ -463,84 +457,71 @@ class Replacement extends Action
      * @return void
      */
     private function sendReplacementEmail(
-        \Magento\Sales\Model\Order   $parent,
-        \Magento\Sales\Model\Order   $replacement,
+        \Magento\Sales\Model\Order    $parent,
+        \Magento\Sales\Model\Order    $replacement,
         \ViraXpress\Rma\Model\Request $rma,
-        int $storeId): void {
-
-        // Base variables (common for both customer and admin)
-        $baseVars = [
-            'parent_order'           => $parent,
-            'replacement_order'      => $replacement,
-            'rma_id'                 => $rma->getId(),
-            'customer_name'          => $parent->getCustomerName(),
-            'parent_order_id'        => $parent->getIncrementId(),
-            'replacement_order_id'   => $replacement->getIncrementId(),
+        int $storeId
+    ): void {
+        $vars = [
+            'parent_order'          => $parent,
+            'replacement_order'     => $replacement,
+            'rma'                   => $rma,
+            'customer_name'         => $parent->getCustomerName(),
+            'parent_order_id'       => $parent->getIncrementId(),
+            'replacement_order_id'  => $replacement->getIncrementId(),
+            'parent_order_url'      => $this->urlBuilder->getUrl('sales/order/view', [
+                'order_id' => $parent->getEntityId()
+            ]),
+            'replacement_order_url' => $this->urlBuilder->getUrl('sales/order/view', [
+                'order_id' => $replacement->getEntityId()
+            ]),
         ];
-
-        /* sender */
-        $identity = (string)$this->scopeConfig
-        ->getValue(self::XML_SENDER_IDENTITY, ScopeInterface::SCOPE_STORE, $storeId) ?: 'general';
-        $sender   = $this->senderResolver->resolve($identity, $storeId);
-
-        /* customer mail */
-        $tpl       = (string)$this->scopeConfig
-        ->getValue(self::XML_REPLACEMENT_TEMPLATE, ScopeInterface::SCOPE_STORE, $storeId);
+    
+        $identity = (string)$this->scopeConfig->getValue(
+            self::XML_SENDER_IDENTITY, ScopeInterface::SCOPE_STORE, $storeId
+        ) ?: 'general';
+        $sender = $this->senderResolver->resolve($identity, $storeId);
+    
+        $tpl       = (string)$this->scopeConfig->getValue(
+            self::XML_REPLACEMENT_TEMPLATE, ScopeInterface::SCOPE_STORE, $storeId
+        );
         $custEmail = (string)$parent->getCustomerEmail();
-
+    
+        // ── Customer email ────────────────────────────────────────────────────
         if ($tpl && $custEmail) {
-            // Customer-specific variables with frontend URLs
-            $customerVars = array_merge($baseVars, [
-                'parent_order_url'       => $this->frontendUrl->getUrl('sales/order/view', [
-                    'order_id' => $parent->getEntityId(),
-                    '_scope' => $storeId
-                ]),
-                'replacement_order_url'  => $this->frontendUrl->getUrl('sales/order/view', [
-                    'order_id' => $replacement->getEntityId(),
-                    '_scope' => $storeId
-                ]),
-            ]);
-
-            $this->transportBuilder
+            $this->transportBuilder->create()   // fresh instance
                 ->setTemplateIdentifier($tpl)
-                ->setTemplateOptions(
-                    ['area'=>\Magento\Framework\App\Area::AREA_FRONTEND
-                    ,'store'=>$storeId]
-                )
-                ->setTemplateVars($customerVars)
+                ->setTemplateOptions([
+                    'area'  => \Magento\Framework\App\Area::AREA_FRONTEND,
+                    'store' => $storeId,
+                ])
+                ->setTemplateVars($vars)
                 ->setFromByScope($sender, $storeId)
                 ->addTo($custEmail, (string)$parent->getCustomerName())
                 ->getTransport()
                 ->sendMessage();
         }
-
-        /* admin copy (optional) */
-        if ($this->scopeConfig
-        ->isSetFlag(self::XML_REPLACEMENT_SEND_TO_ADMIN, ScopeInterface::SCOPE_STORE, $storeId)) {
-            $adminEmail = (string)$this->scopeConfig
-            ->getValue(self::XML_REPLACEMENT_ADMIN_EMAIL, ScopeInterface::SCOPE_STORE, $storeId);
+    
+        // ── Admin copy (optional) ─────────────────────────────────────────────
+        if ($this->scopeConfig->isSetFlag(
+            self::XML_REPLACEMENT_SEND_TO_ADMIN, ScopeInterface::SCOPE_STORE, $storeId
+        )) {
+            $adminEmail = (string)$this->scopeConfig->getValue(
+                self::XML_REPLACEMENT_ADMIN_EMAIL, ScopeInterface::SCOPE_STORE, $storeId
+            );
+    
             if (filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
-
-                // Admin-specific variables with admin panel URLs
-                $adminVars = array_merge($baseVars, [
-                    'parent_order_url'       => $this->urlBuilder->getUrl('sales/order/view', [
-                        'order_id' => $parent->getEntityId()
-                    ]),
-                    'replacement_order_url'  => $this->urlBuilder->getUrl('sales/order/view', [
-                        'order_id' => $replacement->getEntityId()
-                    ]),
-                ]);
-
-                $adminTransport = $this->transportBuilder
+                $this->transportBuilder->create()   // fresh instance — no stale $to
                     ->setTemplateIdentifier($tpl ?: 'rma_replacement_email_template')
-                    ->setTemplateOptions(
-                        ['area'=>\Magento\Framework\App\Area::AREA_ADMINHTML
-                        ,'store'=>$storeId]
-                    )
-                    ->setTemplateVars($adminVars)
+                    ->setTemplateOptions([
+                        'area'  => \Magento\Framework\App\Area::AREA_FRONTEND,
+                        'store' => $storeId,
+                    ])
+                    ->setTemplateVars($vars)
                     ->setFromByScope($sender, $storeId)
-                    ->addTo($adminEmail);
-                $adminTransport->getTransport()->sendMessage();
+                    ->addTo($adminEmail)               // ← was missing
+                    ->getTransport()
+                    ->sendMessage();
             }
         }
     }
